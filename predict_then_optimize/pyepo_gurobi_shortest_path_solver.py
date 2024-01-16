@@ -12,7 +12,7 @@ class PyEPOGurobiShortestPathSolver:
         sols = []
         objs = []
         pbar = tqdm(costs)
-        print("Getting solutions and objective values...")
+        print("Generating solutions and objective values...")
         for c in pbar:
             self.optimizer.setObj(c)
             sol, obj = self.optimizer.solve()

@@ -15,12 +15,16 @@ from tqdm import tqdm
 from xgboost import XGBRegressor
 import lightgbm as lgb
 from global_parameters import GlobalParameters
-from predict_then_optimize.base_task import BaseTaskClass
+from base_task import BaseTaskClass
 from torch.utils.data import DataLoader
 import torch
+
+from luigi_daemon import LuigiDaemon
 from pyepo_gurobi_shortest_path_solver import PyEPOGurobiShortestPathSolver
 from dataset import TorchDataset
 from nn_regressor import fcNet
+
+luigi.interface.core.log_level = "WARNING"
 
 
 class SyntheticDataGenerator(BaseTaskClass):
@@ -38,6 +42,7 @@ class SyntheticDataGenerator(BaseTaskClass):
             noise_width=self.global_params.noise_width,
             seed=self.global_params.seed
         )
+        print("Generated shortest-path Dataset...")
 
         x_train, x_test, y_train, y_test = train_test_split(
             features,
@@ -50,6 +55,7 @@ class SyntheticDataGenerator(BaseTaskClass):
         self.dump_pickle(x_test, self.output()["x_test"].path)
         self.dump_pickle(y_train, self.output()["y_train"].path)
         self.dump_pickle(y_test, self.output()["y_test"].path)
+        print("Split and saved dataset Data...")
 
     def output(self):
         return {
@@ -81,6 +87,7 @@ class GenerateOptimalSolutionsAndObjectiveValues(BaseTaskClass):
         test_optimal_sols, test_optimal_objs = solver._get_solutions_and_objective_values(y_test)
         self.dump_pickle(test_optimal_sols, self.output()["test_optimal_sols"].path)
         self.dump_pickle(test_optimal_objs, self.output()["test_optimal_objs"].path)
+        print("Saved optimal solutions and objective values...")
 
     def output(self):
         return {
@@ -121,12 +128,15 @@ class SKLMultiOutputRegressionModel(TwoStageSolution):
         x_train, x_test, y_train, _ = self._load_split_dataset()
 
         self._init_multioutput_regressor()
+        print(f"Training {self.__class__.__name__}...")
         self.regressor.fit(x_train, y_train)
 
+        print(f"Predicting {self.__class__.__name__}...")
         test_predictions = self.regressor.predict(x_test)
 
         self.dump_pickle(test_predictions, self.output()["test_predictions"].path)
         self.dump_pickle(self.regressor, self.output()["fitted_model"].path)
+        print(f"Saved predictions and model for {self.__class__.__name__}...")
 
     def _load_split_dataset(self):
         x_train = self.load_pickle(self.input()["split_dataset"]["x_train"].path)
@@ -219,15 +229,22 @@ class SPOPlus(OneStageSolution):
     def run(self):
         print("=====SPOPlus=====")
         torch.cuda.empty_cache()
+        print("Cleared GPU cache...")
+        torch.manual_seed(self.global_params.seed)
+        torch.cuda.manual_seed(self.global_params.seed)
+
+        device = self._get_device()
 
         self._init_data_loaders()
-        self._init_regressor_and_optimizer()
-        self._train()
+        self._init_regressor_and_optimizer(device)
+        self._train(device)
         self.test_predictions = self._predict()
 
         self.dump_pickle(self.test_predictions, self.output()["test_predictions"].path)
         torch.save(self.regressor.state_dict(), self.output()["fitted_model"].path)
+        print("Saved predictions and model state...")
         torch.cuda.empty_cache()
+        print("Cleared GPU cache again...")
 
     def _init_data_loaders(self):
         x_train, x_test, y_train, y_test = self._load_split_dataset()
@@ -236,44 +253,40 @@ class SPOPlus(OneStageSolution):
         train_dataset = TorchDataset(X=x_train, y=y_train, sols=train_opt_sols, objs=train_opt_objs)
         test_dataset = TorchDataset(X=x_test, y=y_test, sols=test_opt_sols, objs=test_opt_objs)
 
-        self.train_loader = DataLoader(train_dataset, batch_size=self.global_params.batch, shuffle=True)
+        self.train_loader = DataLoader(train_dataset, batch_size=self.global_params.batch, shuffle=True, num_workers=self.global_params.n_jobs)
         self.test_loader = DataLoader(test_dataset, batch_size=self.global_params.batch, shuffle=False)
+        print("Assigned data loaders...")
 
-    def _init_regressor_and_optimizer(self):
+    def _init_regressor_and_optimizer(self, device):
         arch = [self.global_params.num_features] + []
         arch.append((self.global_params.grid[0] - 1) * self.global_params.grid[1] + \
                     (self.global_params.grid[1] - 1) * self.global_params.grid[0])
 
-        self.regressor = fcNet(arch)
+        self.regressor = fcNet(arch).to(device)
 
         if self.global_params.optimizer == "sgd":
             self.optimizer = SGD(self.regressor.parameters(), lr=self.global_params.learning_rate)
         if self.global_params.optimizer == "adam":
             self.optimizer = Adam(self.regressor.parameters(), lr=self.global_params.learning_rate)
 
-    def _train(self):
-        torch.manual_seed(self.global_params.seed)
-        torch.cuda.manual_seed(self.global_params.seed)
+        print(f"Assigned regressor and optimizer {self.global_params.optimizer}")
 
-        device = self._get_device()
-        self.regressor.to(device)
+    def _train(self, device):
+
         self.regressor.train()
-
         solver = pyepo.model.grb.shortestPathModel(self.global_params.grid)
-        spop = pyepo.func.SPOPlus(solver, processes=1)
-
+        spop = pyepo.func.SPOPlus(solver, processes=self.global_params.n_jobs)
         time.sleep(1)
 
         pbar = tqdm(range(self.global_params.epochs))
         print("Training SPO+...")
         for epoch in pbar:
             for feats, costs, sols, objs in self.train_loader:
-                feats, costs, sols, objs = feats.to(device), costs.to(device), sols.to(device), objs.to(device)
 
+                feats, costs, sols, objs = feats.to(device), costs.to(device), sols.to(device), objs.to(device)
+                self.optimizer.zero_grad()
                 predicted_costs = self.regressor(feats)
                 loss = spop(predicted_costs, costs, sols, objs).mean()
-
-                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
@@ -304,7 +317,7 @@ class SPOPlus(OneStageSolution):
     def _get_device():
         if torch.cuda.is_available():
             device = torch.device("cuda")
-            print("Device:")
+            print("Devices:")
             for i in range(torch.cuda.device_count()):
                 print("    {}:".format(i), torch.cuda.get_device_name(i))
         else:
@@ -350,6 +363,7 @@ class GenerateSolutionsForPredictedCosts(BaseTaskClass):
         prediction_sols, _ = solver._get_solutions_and_objective_values(test_predictions)
 
         self.dump_pickle(prediction_sols, self.output()["test_prediction_solutions"].path)
+        print("Saved prediction solutions...")
 
 
 class Evaluation(BaseTaskClass):
@@ -409,19 +423,22 @@ class Evaluation(BaseTaskClass):
 
         self.regret /= true_objs.sum()
         if self.regret < 0:
-            print("regret is negative")
+            print("This shouldn't happen: The Regret is negative")
 
         self.summary["regret"] = self.regret[0]
+        print("Computed regret...")
 
     def _compute_and_write_mse_in_summary(self, predictions, true_costs):
         self.mse = ((predictions - true_costs) ** 2).mean()
         self.summary["mse"] = self.mse
+        print("Computed MSE...")
 
     def _write_pipeline_steps(self):
         self.summary["regressor"] = self.requires()["predictions"].task_family
 
     def _save_outputs(self):
         self.dump_json(self.summary, self.output()["summary"].path)
+        print("Saved summary json")
 
     def output(self):
         return {
@@ -443,14 +460,14 @@ if __name__ == "__main__":
         max_results = actual
 
     validator = UniqueTaskPipelineValidator(
-        [GenerateOptimalSolutionsAndObjectiveValues, SolutionApproach, TwoStageSolution, SKLMultiOutputRegressionModel,
-         OneStageSolution])
+        [SolutionApproach, TwoStageSolution, SKLMultiOutputRegressionModel,
+        OneStageSolution])
     results = [t() for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
 
     if results:
-        print("Number of results", max_results)
-        print("Number of results after filtering", len(results))
-        print("Run Pipelines")
+        print("Number of pipelines", max_results)
+        print("Number of pipelines after filtering", len(results))
+        print("Running Pipelines...")
         gp = GlobalParameters()
         for training_size in [100, 1000, 5000]:
             for deg in [1, 2, 4, 6]:
@@ -470,9 +487,9 @@ if __name__ == "__main__":
                         gp.batch = 32
                         gp.optimizer = "adam"
                         gp.epochs = 100
-
-                        luigi.build(results, local_scheduler=True, detailed_summary=True)
+                        with LuigiDaemon():
+                            luigi.build(results, local_scheduler=False, detailed_summary=True)
 
 
     else:
-        print("No results!")
+        print("No pipelines!")
