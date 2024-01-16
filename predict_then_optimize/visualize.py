@@ -22,7 +22,7 @@ def draw_regret_facet_grid(summaries_df, save_to_path="results_analysis", title=
 
     g = sns.FacetGrid(summaries_df, col="Noise Half−width", row="Training Set Size", aspect=1.4)
     g.map_dataframe(sns.boxplot, x="Polynomial Degree", y="Normalized Regret", hue="Regressor",
-                    palette=["#78CEB5", "#FFBAC8"], fliersize=2, fill=True)
+                    palette=sns.color_palette("Set2")[:summaries_df["Regressor"].nunique()], fliersize=2, fill=True)
     g.add_legend()
     for ax in g.axes.flatten():
         ax.tick_params(labelbottom=True)
