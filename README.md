@@ -1,7 +1,7 @@
 # cls-luigi-paper
 
 
-This repository is the official implementation of the examples in the paper:
+This repository contains the official implementation of the examples in the paper:
 [CLS-Luigi: A library for automatic analytics pipelines generation](https://i.pinimg.com/474x/fc/27/fb/fc27fb16e1e692e07f8bb3764dfc633b.jpg)
 
 ```
@@ -15,9 +15,9 @@ This repository is the official implementation of the examples in the paper:
 
 ## Python virtual environments and dependencies
 
-Note that we used two separate virtual environments to execute the examples in this repository. This is because Auto-Sklearn doesn't support python > 3.9 while CLS-Luigi requires Python 3.11.
+Note that we used two separate virtual environments to execute the examples in this repository. This is because Auto-Sklearn doesn't support Python> 3.9 while CLS-Luigi requires Python 3.11.
 
-for running the examples "automl_in_cls_luigi" & "decision_pipeline" we used Python 3.11.6. You may install the dependencies as follows: 
+for running the examples "automl_in_cls_luigi" & "decision_pipeline" direcotries we used Python 3.11.6. You may install the dependencies as follows: 
 
 ```
 git clone --branch MPC https://github.com/khalil-research/PyEPO.git
@@ -26,7 +26,7 @@ pip install PyEPO/pkg/.
 pip install -r requirements.txt
 ```
 
-for running the example in "auto-sklearn" we used Python 3.8.18. You may then install Auto-sklearn as follows:
+for running the example in "auto-sklearn" directory we used Python 3.8.18. You may install the library "Auto-Sklearn" as follows:
 
 ```
 pip install auto-sklearn==0.15.0
