@@ -1,7 +1,7 @@
 # cls-luigi-paper
 
 
-This repository is the official implementation of the examples of the paper:
+This repository is the official implementation of the examples in the paper:
 [CLS-Luigi: A library for automatic analytics pipelines generation](https://i.pinimg.com/474x/fc/27/fb/fc27fb16e1e692e07f8bb3764dfc633b.jpg)
 
 ```
