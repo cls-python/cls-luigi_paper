@@ -17,7 +17,7 @@ This repository contains the official implementation of the examples in the pape
 
 Note that we used two separate virtual environments to execute the examples in this repository. This is because Auto-Sklearn doesn't support Python> 3.9 while CLS-Luigi requires Python 3.11.
 
-for running the examples "automl_in_cls_luigi" & "decision_pipeline" direcotries we used Python 3.11.6. You may install the dependencies as follows: 
+for running the examples "automl_in_cls_luigi" & "decision_pipeline" directories we used Python 3.11.6. You may install the dependencies as follows: 
 
 ```
 git clone --branch MPC https://github.com/khalil-research/PyEPO.git
