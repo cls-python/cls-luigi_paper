@@ -11,7 +11,6 @@ from global_parameters import GlobalParameters
 
 
 class BaseTaskClass(luigi.Task, LuigiCombinator):
-    # worker_timeout = 100
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

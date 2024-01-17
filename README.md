@@ -32,7 +32,7 @@ for running the example in "auto-sklearn" we used Python 3.8.18. You may then in
 ```
 pip install auto-sklearn==0.15.0
 ```
-If you are having problems with downloading Auto-Sklearn, please consult their  [Github-Repository](https://github.com/automl/auto-sklearn)
+If you are having problems with downloading Auto-Sklearn, please consult their [Github-Repository](https://github.com/automl/auto-sklearn)
 
 
 
@@ -51,10 +51,9 @@ python utils/score_collector.py
 
 
 ````
-cd predict_then_optimize
+cd decision_pipelines
 python main.py
-python collect_summaries.py
-python visualize.py
+python gather_scores_and_plot.py
 ````
 
 

@@ -1,11 +1,11 @@
+
+
 import time
 import luigi
 import numpy as np
 import pyepo
-from cls.fcl import FiniteCombinatoryLogic
-from cls.subtypes import Subtypes
-from cls_luigi.inhabitation_task import ClsParameter, RepoMeta
-from cls_luigi.unique_task_pipeline_validator import UniqueTaskPipelineValidator
+
+from cls_luigi.inhabitation_task import ClsParameter
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
@@ -14,15 +14,14 @@ from torch.optim import SGD, Adam
 from tqdm import tqdm
 from xgboost import XGBRegressor
 import lightgbm as lgb
-from global_parameters import GlobalParameters
 from base_task import BaseTaskClass
 from torch.utils.data import DataLoader
 import torch
 
-from luigi_daemon import LuigiDaemon
-from pyepo_gurobi_shortest_path_solver import PyEPOGurobiShortestPathSolver
-from dataset import TorchDataset
-from nn_regressor import fcNet
+from models.pyepo_gurobi_shortest_path_solver import PyEPOGurobiShortestPathSolver
+from torch_dataset import TorchDataset
+from models.nn_regressor import fcNet
+
 
 luigi.interface.core.log_level = "WARNING"
 
@@ -445,51 +444,3 @@ class Evaluation(BaseTaskClass):
             "summary": self.get_luigi_local_target_with_task_id("summary.json")
         }
 
-
-if __name__ == "__main__":
-
-    target = Evaluation.return_type()
-    repository = RepoMeta.repository
-    fcl = FiniteCombinatoryLogic(repository, Subtypes(RepoMeta.subtypes))
-    inhabitation_result = fcl.inhabit(target)
-    max_tasks_when_infinite = 10
-    actual = inhabitation_result.size()
-    max_results = max_tasks_when_infinite
-
-    if not actual is None or actual == 0:
-        max_results = actual
-
-    validator = UniqueTaskPipelineValidator(
-        [SolutionApproach, TwoStageSolution, SKLMultiOutputRegressionModel,
-        OneStageSolution])
-    results = [t() for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
-
-    if results:
-        print("Number of pipelines", max_results)
-        print("Number of pipelines after filtering", len(results))
-        print("Running Pipelines...")
-        gp = GlobalParameters()
-        for training_size in [100, 1000, 5000]:
-            for deg in [1, 2, 4, 6]:
-                for noise in [0, .5]:
-                    for seed in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-                        gp.num_data = training_size
-                        gp.deg = deg
-                        gp.noise_width = noise
-                        gp.seed = seed
-                        gp.grid = (5, 5)
-                        gp.num_features = 5
-
-                        gp.dataset_name = "shortest_path-" + "ts_" + str(training_size) + "-deg_" + str(
-                            deg) + "-noise_" + str(
-                            noise) + "-seed_" + str(seed)
-
-                        gp.batch = 32
-                        gp.optimizer = "adam"
-                        gp.epochs = 100
-                        with LuigiDaemon():
-                            luigi.build(results, local_scheduler=False, detailed_summary=True)
-
-
-    else:
-        print("No pipelines!")
