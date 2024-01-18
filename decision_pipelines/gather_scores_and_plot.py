@@ -62,7 +62,7 @@ def legend_name(regressor):
         return "LGBM (LT)"
 
 
-def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], noises=[0.0, 0.5], save_to_path="scores_and_plots", show=True):
+def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], noises=[0.0, 0.5], save_to_path="scores_and_plots", out_name="comparison_boxplot.png", show=True):
     boxes, labels = [], []
 
     fig, axis = plt.subplots(3, 2, figsize=(26, 18))
@@ -107,6 +107,7 @@ def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], nois
 
         # grid
         axis[ix].grid(color="grey", alpha=0.5, linewidth=0.5, which="major", axis="y")
+
         # axis labels
         if ix % 2 == 0:
             axis[ix].set_ylabel('Normalized Regret', fontsize=24)
@@ -141,10 +142,10 @@ def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], nois
     plt.tight_layout()
     if show:
         plt.show()
-    fig.savefig(pjoin(save_to_path, f"comparison_boxplot.png"), dpi=400)
+    fig.savefig(pjoin(save_to_path, out_name), dpi=400)
 
 
 if __name__ == "__main__":
-    summaries_df = collect_and_save_summaries()
-    # summaries_df = pd.read_csv("scores_and_plots/scores.csv")
+    # summaries_df = collect_and_save_summaries()
+    summaries_df = pd.read_csv("scores_and_plots/scores.csv")
     draw_comparison_boxplot(summaries_df)
