@@ -146,6 +146,5 @@ def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], nois
 
 
 if __name__ == "__main__":
-    # summaries_df = collect_and_save_summaries()
-    summaries_df = pd.read_csv("scores_and_plots/scores.csv")
+    summaries_df = collect_and_save_summaries()
     draw_comparison_boxplot(summaries_df)
