@@ -45,8 +45,8 @@ def collect_and_save_summaries(results_path="results", save_to_path="scores_and_
     summaries_df = pd.DataFrame.from_dict(summaries_dict)
 
     os.makedirs(save_to_path, exist_ok=True)
-
     summaries_df.to_csv(pjoin(save_to_path, out_name), index=False)
+    return summaries_df
 
 
 def legend_name(regressor):
