@@ -126,7 +126,7 @@ def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], nois
         axis[ix].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
         # subplot title
-        axis[ix].set_title("Training Set Size = 100, Noise Half−width = 0.0", fontsize=24)
+        axis[ix].set_title(f"Training Set Size = {ts}, Noise Half−width = {n}", fontsize=24)
 
         # legend
         leg = axis[ix].legend(boxes, labels, fontsize=22, loc=2, labelspacing=0.2, handlelength=1, ncol=3, )
@@ -147,4 +147,5 @@ def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], nois
 
 if __name__ == "__main__":
     summaries_df = collect_and_save_summaries()
+    # summaries_df = pd.read_csv("scores_and_plots/scores.csv")
     draw_comparison_boxplot(summaries_df)
