@@ -107,6 +107,10 @@ You can find the logs of all runs in the `automl_pipelines/logs/` directory.
 
 The `luigi-root.log` file contains the warnings that occurred during all runs. Note that the `luigi-interface.log` file may be too big to open, as it contains all the outputs during all runs. 
 
+## Running Auto-Sklearn example
+TODO!!
+
+
 ## Time and run savings
 
 Checkout th Jupyter Notebook `automl_pipelines/time_and_runs_analysis.ipynb` to see our how we calculated time and run saving using luigig's caching. 
