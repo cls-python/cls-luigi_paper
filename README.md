@@ -97,7 +97,7 @@ Note that that datasets are downloaded from openml and split as follows:
                 |--- x_test.csv
                 |--- y_test.csv
 
-The `/test_phase` directory, the training data comprises the entirety of the data in `/train_phase` directory. 
+In the `/test_phase` directory, the training data comprises the entirety of the data in `/train_phase` directory. 
 
 ### Run history
 You can find the run history of all runs in the `automl_pipelines/run_histories/` directory. 
