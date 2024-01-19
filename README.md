@@ -43,6 +43,8 @@ cd decision_pipelines
 python main.py
 python gather_scores_and_plot.py
 ````
+IMPORTANT: The resulting pipelines are designed to handle only binary-classification problems with numerical features!
+
 ### Pipelines outputs and regret comparison graph.
 Once completed, you may find the results of all runs under `decision_pipelines/results/` directory.
 

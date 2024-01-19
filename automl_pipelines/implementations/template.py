@@ -23,15 +23,19 @@ class LoadSplitData(AutoSklearnTask):
         }
 
 
-class NumericalPreprocessor(AutoSklearnTask):
+class DataPreprocessor(AutoSklearnTask):
     abstract = True
 
 
-class ImputerAndORScaler(NumericalPreprocessor):
+class NumericalPreprocessor(DataPreprocessor):
     abstract = True
 
 
-class NumericalImputer(ImputerAndORScaler):
+class ScalerOrAndImputer(NumericalPreprocessor):
+    abstract = True
+
+
+class NumericalImputer(ScalerOrAndImputer):
     abstract = True
     original_features_and_target = ClsParameter(tpe=LoadSplitData.return_type())
 
@@ -76,7 +80,7 @@ class NumericalImputer(ImputerAndORScaler):
             joblib.dump(self.imputer, outfile)
 
 
-class Scaler(ImputerAndORScaler):
+class Scaler(ScalerOrAndImputer):
     abstract = True
     imputed_features = ClsParameter(tpe=NumericalImputer.return_type())
 
@@ -120,9 +124,9 @@ class Scaler(ImputerAndORScaler):
         }
 
 
-class FeaturePreprocessor(NumericalPreprocessor):
+class FeaturePreprocessor(DataPreprocessor):
     abstract = True
-    processed_features = ClsParameter(tpe=ImputerAndORScaler.return_type())
+    numerically_processed_features = ClsParameter(tpe=NumericalPreprocessor.return_type())
     original_features_and_target = ClsParameter(tpe=LoadSplitData.return_type())
 
     feature_preprocessor = None
@@ -133,7 +137,7 @@ class FeaturePreprocessor(NumericalPreprocessor):
 
     def requires(self):
         return {
-            "processed_features": self.processed_features(),
+            "processed_features": self.numerically_processed_features(),
             "original_features_and_target": self.original_features_and_target()
         }
 
@@ -193,7 +197,7 @@ class FeaturePreprocessor(NumericalPreprocessor):
 
 class Classifier(AutoSklearnTask):
     abstract = True
-    processed_features = ClsParameter(tpe=NumericalPreprocessor.return_type())
+    processed_features = ClsParameter(tpe=DataPreprocessor.return_type())
     original_features_and_targets = ClsParameter(tpe=LoadSplitData.return_type())
 
     estimator = None
