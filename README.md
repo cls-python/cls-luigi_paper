@@ -113,7 +113,7 @@ TODO!!
 
 ## Time and run savings
 
-Checkout th Jupyter Notebook `automl_pipelines/time_and_runs_analysis.ipynb` to see our how we calculated time and run saving using luigig's caching. 
+Checkout th Jupyter Notebook `automl_pipelines/time_and_runs_analysis.ipynb` to see our how we calculated time and run saving using Luigi's caching mechanism.  
 
 ## Experiment Hardware
 
