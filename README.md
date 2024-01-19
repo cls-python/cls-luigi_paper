@@ -11,7 +11,7 @@ This repository contains the official implementation of the examples in the pape
   journal={},
   year={2024}
 }
-``` 
+```
 
 ## Python virtual environments and dependencies
 
@@ -121,4 +121,8 @@ All experiments were run on a machine with the following specifications:
 | __CPU__  | Intel(R) Xeon(R) w5-2445 x86_64    |
 | __GPUs__ | 2 x NVIDIA RTX 6000 Ada Generation |
 | __RAM__  | ~131.5 GB                          |
+
+
+## Running on Windows and MacOS
+The experiments in this repository are yet to be tested on Windows and MacOS operating systems. 
 
