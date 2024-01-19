@@ -1,7 +1,7 @@
 from ..template import Scaler
 from sklearn.preprocessing import StandardScaler
 import warnings
-from examples.automl.utils.time_recorder import TimeRecorder
+from utils.time_recorder import TimeRecorder
 
 
 class SKLStandardScaler(Scaler):

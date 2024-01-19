@@ -3,7 +3,7 @@ import warnings
 from ..template import FeaturePreprocessor
 from sklearn.decomposition import KernelPCA
 
-from examples.automl.utils.time_recorder import TimeRecorder
+from utils.time_recorder import TimeRecorder
 
 
 class SKLKernelPCA(FeaturePreprocessor):
@@ -12,7 +12,7 @@ class SKLKernelPCA(FeaturePreprocessor):
     def run(self):
         with warnings.catch_warnings(record=True) as w:
             with TimeRecorder(self.output()["run_time"].path) as time_recorder:
-                self._read_split_scaled_features()
+                self._read_split_processed_features()
 
                 self.feature_preprocessor = KernelPCA(
                     n_components=100,

@@ -164,3 +164,8 @@ cython_debug/
 /decision_pipelines/results/
 /decision_pipelines/scores_and_plots/
 /venvs/
+/automl_pipelines/logs/
+/automl_pipelines/results/
+/automl_pipelines/datasets/
+/automl_pipelines/run_histories/
+/PyEPO/

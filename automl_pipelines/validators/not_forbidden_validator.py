@@ -1,9 +1,51 @@
 from typing import List, Set
-
 import luigi
 from luigi.task import flatten
 
-from examples.automl.implementations.forbidden import FORBIDDEN
+
+FORBIDDEN = [
+    {'SKLMultinomialNB', 'SKLNystroem'},
+    {'SKLMultinomialNB', 'SKLKernelPCA'},
+    {'SKLMultinomialNB', 'SKLFastICA'},
+    {'SKLMultinomialNB', 'SKLPCA'},
+    {'SKLMultinomialNB', 'SKLRBFSampler'},
+    {'SKLGaussianNaiveBayes', 'SKLNystroem'},
+    {'SKLGaussianNaiveBayes', 'SKLRBFSampler'},
+    {'SKLGaussianNaiveBayes', 'SKLKernelPCA'},
+    {'SKLRandomForest', 'SKLNystroem'},
+    {'SKLRandomForest', 'SKLRBFSampler'},
+    {'SKLRandomForest', 'SKLKernelPCA'},
+    {'SKLKernelSVC', 'SKLNystroem'},
+    {'SKLKernelSVC', 'SKLRBFSampler'},
+    {'SKLKernelSVC', 'SKLKernelPCA'},
+    {'SKLKNearestNeighbors', 'SKLNystroem'},
+    {'SKLKNearestNeighbors', 'SKLRBFSampler'},
+    {'SKLKNearestNeighbors', 'SKLKernelPCA'},
+    {'SKLGradientBoosting', 'SKLNystroem'},
+    {'SKLGradientBoosting', 'SKLRBFSampler'},
+    {'SKLGradientBoosting', 'SKLKernelPCA'},
+    {'SKLExtraTrees', 'SKLNystroem'},
+    {'SKLExtraTrees', 'SKLRBFSampler'},
+    {'SKLExtraTrees', 'SKLKernelPCA'},
+    {'SKLDecisionTree', 'SKLNystroem'},
+    {'SKLDecisionTree', 'SKLRBFSampler'},
+    {'SKLDecisionTree', 'SKLKernelPCA'},
+    {'SKLAdaBoost', 'SKLNystroem'},
+    {'SKLAdaBoost', 'SKLRBFSampler'},
+    {'SKLAdaBoost', 'SKLKernelPCA'},
+    {'SKLMultinomialNB', 'SKLSelectRates'},
+    {'SKLMultinomialNB', 'SKLSelectPercentile'},
+    {'SKLQuadraticDiscriminantAnalysis', 'SKLRandomTreesEmbedding'},
+    {'SKLLinearDiscriminantAnalysis', 'SKLRandomTreesEmbedding'},
+    {'SKLGradientBoosting', 'SKLRandomTreesEmbedding'},
+    {'SKLGaussianNaiveBayes', 'SKLRandomTreesEmbedding'},
+    {'SKLMultinomialNB', 'SKLPolynomialFeatures'},
+    {'SKLMultinomialNB', 'NoFeaturePreprocessor'},
+    {'SKLMultinomialNB', 'SKLSelectFromLinearSVC'},
+    {'SKLMultinomialNB', 'SKLFeatureAgglomeration'},
+    {'SKLMultinomialNB', 'SKLSelectFromExtraTrees'}
+]
+
 
 
 class NotForbiddenValidator(object):
@@ -31,3 +73,5 @@ class NotForbiddenValidator(object):
                 if child.task_family not in pipeline:
                     pipeline.extend(self.get_pipeline_as_list(child))
         return pipeline
+
+

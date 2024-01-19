@@ -1,6 +1,6 @@
 from ..template import FeaturePreprocessor
 from sklearn.feature_selection import SelectPercentile, chi2
-from examples.automl.utils.time_recorder import TimeRecorder
+from utils.time_recorder import TimeRecorder
 import warnings
 
 class SKLSelectPercentile(FeaturePreprocessor):
@@ -9,8 +9,8 @@ class SKLSelectPercentile(FeaturePreprocessor):
     def run(self):
         with warnings.catch_warnings(record=True) as w:
             with TimeRecorder(self.output()["run_time"].path) as time_recorder:
-                self._read_split_scaled_features()
-                self._read_split_target_values()
+                self._read_split_processed_features()
+                self._read_split_original_target_values()
 
                 self.feature_preprocessor = SelectPercentile(
                     score_func=chi2,

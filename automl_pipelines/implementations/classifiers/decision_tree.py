@@ -2,7 +2,7 @@ from ..template import Classifier
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 import warnings
-from examples.automl.utils.time_recorder import TimeRecorder
+from utils.time_recorder import TimeRecorder
 
 class SKLDecisionTree(Classifier):
     abstract = False
@@ -11,7 +11,7 @@ class SKLDecisionTree(Classifier):
         with warnings.catch_warnings(record=True) as w:
             with TimeRecorder(self.output()["run_time"].path) as time_recorder:
                 self._read_split_processed_features()
-                self._read_split_target_values()
+                self._read_split_original_target_values()
 
                 num_features = self.x_train.shape[1]
 

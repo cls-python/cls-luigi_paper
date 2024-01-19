@@ -1,9 +1,8 @@
 from ..template import Classifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import warnings
-from examples.automl.utils.time_recorder import TimeRecorder
-#TODO
-# - this hanles only binary classification. We neeed to add OneVsRestClassifier
+from utils.time_recorder import TimeRecorder
+
 class SKLLinearDiscriminantAnalysis(Classifier):
     abstract = False
 
@@ -11,7 +10,7 @@ class SKLLinearDiscriminantAnalysis(Classifier):
         with warnings.catch_warnings(record=True) as w:
             with TimeRecorder(self.output()["run_time"].path) as time_recorder:
                 self._read_split_processed_features()
-                self._read_split_target_values()
+                self._read_split_original_target_values()
 
                 self.estimator = LinearDiscriminantAnalysis(
                     shrinkage=None,

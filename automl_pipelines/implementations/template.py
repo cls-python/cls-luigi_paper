@@ -10,15 +10,8 @@ from cls_luigi.inhabitation_task import ClsParameter
 from .autosklearn_task_base import AutoSklearnTask
 
 
-# class FeatureProvider(AutoSklearnTask):
-#     abstract = True
-
-
-class LoadAndSplitData(AutoSklearnTask):
+class LoadSplitData(AutoSklearnTask):
     abstract = True
-
-    def requires(self):
-        return None
 
     def output(self):
         return {
@@ -30,21 +23,28 @@ class LoadAndSplitData(AutoSklearnTask):
         }
 
 
-class NumericalImputer(AutoSklearnTask):
-
+class NumericalPreprocessor(AutoSklearnTask):
     abstract = True
-    split_dataset = ClsParameter(tpe=LoadAndSplitData.return_type())
+
+
+class ImputerAndORScaler(NumericalPreprocessor):
+    abstract = True
+
+
+class NumericalImputer(ImputerAndORScaler):
+    abstract = True
+    original_features_and_target = ClsParameter(tpe=LoadSplitData.return_type())
 
     imputer = None
     x_train = None
     x_test = None
 
     def requires(self):
-        return self.split_dataset()
+        return {"original_features_and_target": self.original_features_and_target()}
 
     def _read_split_features(self):
-        self.x_train = pd.read_pickle(self.input()["x_train"].path)
-        self.x_test = pd.read_pickle(self.input()["x_test"].path)
+        self.x_train = pd.read_pickle(self.input()["original_features_and_target"]["x_train"].path)
+        self.x_test = pd.read_pickle(self.input()["original_features_and_target"]["x_test"].path)
 
     def output(self):
         return {
@@ -76,22 +76,20 @@ class NumericalImputer(AutoSklearnTask):
             joblib.dump(self.imputer, outfile)
 
 
-# class Scaler(FeatureProvider2):
-class Scaler(AutoSklearnTask):
-
+class Scaler(ImputerAndORScaler):
     abstract = True
-    imputed_feaatures = ClsParameter(tpe=NumericalImputer.return_type())
+    imputed_features = ClsParameter(tpe=NumericalImputer.return_type())
 
     scaler = None
     x_train = None
     x_test = None
 
     def requires(self):
-        return self.imputed_feaatures()
+        return {"imputed_features": self.imputed_features()}
 
     def _read_split_imputed_features(self):
-        self.x_train = pd.read_pickle(self.input()["x_train"].path)
-        self.x_test = pd.read_pickle(self.input()["x_test"].path)
+        self.x_train = pd.read_pickle(self.input()["imputed_features"]["x_train"].path)
+        self.x_test = pd.read_pickle(self.input()["imputed_features"]["x_test"].path)
 
     def fit_transform_scaler(self):
         with warnings.catch_warnings(record=True) as w:
@@ -122,12 +120,10 @@ class Scaler(AutoSklearnTask):
         }
 
 
-# class FeaturePreprocessor(FeatureProvider2):
-class FeaturePreprocessor(AutoSklearnTask):
-
+class FeaturePreprocessor(NumericalPreprocessor):
     abstract = True
-    scaled_features = ClsParameter(tpe=Scaler.return_type())
-    target_values = ClsParameter(tpe=LoadAndSplitData.return_type())
+    processed_features = ClsParameter(tpe=ImputerAndORScaler.return_type())
+    original_features_and_target = ClsParameter(tpe=LoadSplitData.return_type())
 
     feature_preprocessor = None
     x_train = None
@@ -137,8 +133,8 @@ class FeaturePreprocessor(AutoSklearnTask):
 
     def requires(self):
         return {
-            "scaled_features": self.scaled_features(),
-            "target_values": self.target_values()
+            "processed_features": self.processed_features(),
+            "original_features_and_target": self.original_features_and_target()
         }
 
     def output(self):
@@ -149,13 +145,13 @@ class FeaturePreprocessor(AutoSklearnTask):
             "run_time": self.get_luigi_local_target_with_task_id("run_time.json")
         }
 
-    def _read_split_scaled_features(self):
-        self.x_train = pd.read_pickle(self.input()["scaled_features"]["x_train"].path)
-        self.x_test = pd.read_pickle(self.input()["scaled_features"]["x_test"].path)
+    def _read_split_processed_features(self):
+        self.x_train = pd.read_pickle(self.input()["processed_features"]["x_train"].path)
+        self.x_test = pd.read_pickle(self.input()["processed_features"]["x_test"].path)
 
-    def _read_split_target_values(self):
-        self.y_train = pd.read_pickle(self.input()["target_values"]["y_train"].path).values.ravel()
-        self.y_test = pd.read_pickle(self.input()["target_values"]["y_test"].path).values.ravel()
+    def _read_split_original_target_values(self):
+        self.y_train = pd.read_pickle(self.input()["original_features_and_target"]["y_train"].path).values.ravel()
+        self.y_test = pd.read_pickle(self.input()["original_features_and_target"]["y_test"].path).values.ravel()
 
     def sava_outputs(self):
         self.x_train.to_pickle(self.output()["x_train"].path)
@@ -197,8 +193,8 @@ class FeaturePreprocessor(AutoSklearnTask):
 
 class Classifier(AutoSklearnTask):
     abstract = True
-    processed_features = ClsParameter(tpe=FeaturePreprocessor.return_type())
-    target_values = ClsParameter(tpe=LoadAndSplitData.return_type())
+    processed_features = ClsParameter(tpe=NumericalPreprocessor.return_type())
+    original_features_and_targets = ClsParameter(tpe=LoadSplitData.return_type())
 
     estimator = None
     x_train = None
@@ -212,7 +208,7 @@ class Classifier(AutoSklearnTask):
     def requires(self):
         return {
             "processed_features": self.processed_features(),
-            "target_values": self.target_values()
+            "original_features_and_targets": self.original_features_and_targets()
         }
 
     def output(self):
@@ -227,9 +223,9 @@ class Classifier(AutoSklearnTask):
         self.x_train = pd.read_pickle(self.input()["processed_features"]["x_train"].path)
         self.x_test = pd.read_pickle(self.input()["processed_features"]["x_test"].path)
 
-    def _read_split_target_values(self):
-        self.y_train = pd.read_pickle(self.input()["target_values"]["y_train"].path).values.ravel()
-        self.y_test = pd.read_pickle(self.input()["target_values"]["y_test"].path).values.ravel()
+    def _read_split_original_target_values(self):
+        self.y_train = pd.read_pickle(self.input()["original_features_and_targets"]["y_train"].path).values.ravel()
+        self.y_test = pd.read_pickle(self.input()["original_features_and_targets"]["y_test"].path).values.ravel()
 
     def sava_outputs(self):
         self.y_test_predict.to_pickle(self.output()["prediction"].path)
@@ -283,29 +279,6 @@ class Classifier(AutoSklearnTask):
         self._add_component_to_run_summary("classifier", classifier)
 
         self.compute_accuracy()
-
-    def _get_upstream_tasks(self):
-        def _get_upstream_tasks_recursively(task, upstream_list=None):
-            if upstream_list is None:
-                upstream_list = []
-
-            if task not in upstream_list:
-                upstream_list.append(task)
-
-            requires = task.requires()
-            if requires:
-                if isinstance(requires, luigi.Task):
-                    if requires not in upstream_list:
-                        upstream_list.append(requires)
-                    _get_upstream_tasks_recursively(requires, upstream_list)
-                elif isinstance(requires, dict):
-                    for key, value in requires.items():
-                        if value not in upstream_list:
-                            upstream_list.append(value)
-                        _get_upstream_tasks_recursively(value, upstream_list)
-            return upstream_list
-
-        return _get_upstream_tasks_recursively(self)
 
     def _add_component_to_run_summary(self, component_name, component):
         if component:

@@ -1,9 +1,8 @@
 from sklearn.svm import LinearSVC
 from ..template import Classifier
 import warnings
-from examples.automl.utils.time_recorder import TimeRecorder
-#TODO
-# - this hanles only binary classification. We neeed to add OneVsRestClassifier
+from utils.time_recorder import TimeRecorder
+
 class SKLLinearSVC(Classifier):
     abstract = False
 
@@ -11,7 +10,7 @@ class SKLLinearSVC(Classifier):
         with warnings.catch_warnings(record=True) as w:
             with TimeRecorder(self.output()["run_time"].path) as time_recorder:
                 self._read_split_processed_features()
-                self._read_split_target_values()
+                self._read_split_original_target_values()
 
                 self.estimator = LinearSVC(
                     penalty="l2",

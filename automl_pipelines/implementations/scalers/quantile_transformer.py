@@ -1,7 +1,7 @@
 from ..template import Scaler
 from sklearn.preprocessing import QuantileTransformer
 import warnings
-from examples.automl.utils.time_recorder import TimeRecorder
+from utils.time_recorder import TimeRecorder
 
 class SKLQuantileTransformer(Scaler):
     abstract = False

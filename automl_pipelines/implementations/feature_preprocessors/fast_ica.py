@@ -1,7 +1,7 @@
 import warnings
 from ..template import FeaturePreprocessor
 from sklearn.decomposition import FastICA
-from examples.automl.utils.time_recorder import TimeRecorder
+from utils.time_recorder import TimeRecorder
 
 
 class SKLFastICA(FeaturePreprocessor):
@@ -10,7 +10,7 @@ class SKLFastICA(FeaturePreprocessor):
     def run(self):
         with warnings.catch_warnings(record=True) as w:
             with TimeRecorder(self.output()["run_time"].path) as time_recorder:
-                self._read_split_scaled_features()
+                self._read_split_processed_features()
 
                 self.feature_preprocessor = FastICA(
                     algorithm="parallel",

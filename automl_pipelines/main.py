@@ -1,19 +1,13 @@
-import logging
-import os
 import sys
 
-sys.path.append('..')
-sys.path.append('../..')
-# sys.path.append('/home/hadi/cls-luigi')
+from tqdm import tqdm
 
+sys.path.append("..")
 
-from luigi.execution_summary import execution_summary
-
-execution_summary.summary_length = 10000
+import logging
+import os
 
 # CLS-Luigi imports
-import subprocess
-
 from cls_luigi.inhabitation_task import RepoMeta
 
 from cls.fcl import FiniteCombinatoryLogic
@@ -22,134 +16,151 @@ from cls_luigi.unique_task_pipeline_validator import UniqueTaskPipelineValidator
 
 # Global Parameters and AutoML validator
 from implementations.global_parameters import GlobalParameters
-#from validators.no_duplicate_tasks_validator import NoDuplicateTasksValidator
 from validators.not_forbidden_validator import NotForbiddenValidator
 
 # template
 from implementations.template import *
 
-from time import time
-import subprocess
-from utils.feature_type_analyzer import FeatureTypeAnalyzer
-from utils.download_and_save_openml_datasets import download_and_save_openml_dataset
+from download_and_save_openml_datasets import download_and_save_openml_dataset
 from import_pipeline_components import import_pipeline_components
 
+from utils.luigi_daemon import LuigiDaemon
 from utils.time_recorder import TimeRecorder
 
+from utils.automl_scores_utils import generate_and_save_run_history, train_summary_stats_str, test_summary_stats_str
 
-def main(
-    ds_id: int,
-    local_scheduler=True) -> None:
+loggers = [logging.getLogger("luigi-root"), logging.getLogger("luigi-interface")]
 
-    x_train, x_test, y_train, y_test, ds_name = download_and_save_openml_dataset(ds_id)
-    os.makedirs("logs", exist_ok=True)
 
-    with TimeRecorder(f"logs/{ds_name}_time.json") as time_recorder:
+def datasets():
+    datasets_list = [
+        359962,  # kc1 classification
+        359958,  # pc4 classification
+        361066,  # bank-marketing classification
+        359972,  # sylvin classification
+    ]
+    return datasets_list
 
-        global_parameters = GlobalParameters()
 
-        global_parameters.x_train_path = x_train
-        global_parameters.x_test_path = x_test
-        global_parameters.y_train_path = y_train
-        global_parameters.y_test_path = y_test
-        global_parameters.dataset_name = ds_name
+def generate_and_filter_pipelines():
+    target = Classifier.return_type()
+    print("Collecting repo...")
+    repository = RepoMeta.repository
+    print("Building...")
 
-        feature_type_analyzer = FeatureTypeAnalyzer(x_train)
+    fcl = FiniteCombinatoryLogic(repository, Subtypes(RepoMeta.subtypes), processes=1)
+    print("Building grammar tree and inhabiting pipelines...")
 
-        import_pipeline_components(
-            include_categorical=feature_type_analyzer.has_categorical_features(),
-            multiclass_classification=False
+    inhabitation_result = fcl.inhabit(target)
+    print("Enumerating pipelines...")
+    max_tasks_when_infinite = 10
+    actual = inhabitation_result.size()
+    max_results = max_tasks_when_infinite
+
+    if actual > 0:
+        max_results = actual
+
+    print("Filtering using UniqueTaskPipelineValidator...")
+    validator = UniqueTaskPipelineValidator(
+        [LoadSplitData, NumericalImputer, Scaler, FeaturePreprocessor,
+         Classifier])
+    pipelines = [t() for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
+
+    print("Filtering using NotForbiddenValidator...")
+    automl_validator = NotForbiddenValidator()
+    pipelines = [t for t in pipelines if automl_validator.validate(t)]
+    print("Generated {} pipelines".format(max_results))
+    print("Number of pipelines after filtering:", len(pipelines))
+    return pipelines
+
+
+def set_global_parameters(x_train, x_test, y_train, y_test, ds_name, seed) -> None:
+    global_parameters = GlobalParameters()
+    global_parameters.x_train_path = x_train
+    global_parameters.x_test_path = x_test
+    global_parameters.y_train_path = y_train
+    global_parameters.y_test_path = y_test
+    global_parameters.dataset_name = ds_name
+    global_parameters.seed = seed
+
+
+def run_train_phase(paths, pipelines, ds_name, seed):
+    set_global_parameters(
+        paths["train_phase"]["x_train_path"],
+        paths["train_phase"]["x_valid_path"],
+        paths["train_phase"]["y_train_path"],
+        paths["train_phase"]["y_valid_path"],
+        ds_name,
+        seed)
+
+    print(f"Running training phase (all pipelines) for dataset {ds_name} using the training and validation datasets...")
+    with TimeRecorder(f"logs/{ds_name}_time.json"):
+        with LuigiDaemon():
+            for pipeline in tqdm(pipelines):
+                luigi.build(
+                    [pipeline],
+                    local_scheduler=False,
+                    logging_conf_file="logging.conf",
+                    detailed_summary=True,
+                    workers=1
+                )
+
+    loggers[1].warning("\n{}\n{} This was dataset: {} {}\n{}\n".format(
+        "*" * 150,
+        "*" * 65,
+        ds_name,
+        "*" * (65 - len(str(paths))),
+        "*" * 150))
+
+
+def run_test_phase(paths, best_pipeline, ds_name, seed):
+    set_global_parameters(
+        paths["test_phase"]["x_train_path"],
+        paths["test_phase"]["x_test_path"],
+        paths["test_phase"]["y_train_path"],
+        paths["test_phase"]["y_test_path"],
+        ds_name + "_incumbent",
+        seed)
+
+    print(f"Running testing phase (best pipeline) for dataset {ds_name} using the training and testing datasets...")
+
+    with LuigiDaemon():
+        luigi.build(
+            [best_pipeline],
+            local_scheduler=False,
+            detailed_summary=True,
+            workers=1
         )
-        time_recorder.checkpoint("imported_components")
 
-        target = Classifier.return_type()
-        print("Collecting Repo")
-        repository = RepoMeta.repository
-        print("Building Repository")
+def main():
+    os.makedirs("logs", exist_ok=True)
+    import_pipeline_components()
+    pipelines = generate_and_filter_pipelines()
 
-        fcl = FiniteCombinatoryLogic(repository, Subtypes(RepoMeta.subtypes), processes=1)
-        print("Build Tree Grammar and inhabit Pipelines")
+    if pipelines:
+        for ds_id in datasets():
+            ds_name, paths = download_and_save_openml_dataset(ds_id, seed)
 
-        inhabitation_result = fcl.inhabit(target)
-        print("Enumerating results")
-        max_tasks_when_infinite = 10
-        actual = inhabitation_result.size()
-        max_results = max_tasks_when_infinite
+            print("=============================================================================================")
+            print(f"                    Training and Testing on dataset: {ds_name}")
+            print("=============================================================================================")
 
-        if actual > 0:
-            max_results = actual
+            run_train_phase(paths, pipelines, ds_name, seed)
 
-        validator = UniqueTaskPipelineValidator(
-            [LoadAndSplitData, CategoryCoalescer, CategoricalEncoder, NumericalImputer, Scaler, FeaturePreprocessor,
-             Classifier])
+            run_history_df = generate_and_save_run_history(ds_name=ds_name, metric="balanced_accuracy")
+            print("Generated and saved training run history for dataset:", ds_name)
+            print(train_summary_stats_str(run_history_df))
 
-        results = [t() for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
+            best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
+            best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
+            run_test_phase(paths, best_pipeline, ds_name, seed)
 
-        time_recorder.checkpoint("enumerated_results_with_UniqueTaskPipelineValidator")
-        automl_validator = NotForbiddenValidator()
-
-        results = [t for t in results if automl_validator.validate(t)]
-        time_recorder.checkpoint("NotForbiddenValidator")
-
-        if results:
-            print("Starting Luigid")
-            loggers[1].warning("Starting Luigid")
-            subprocess.run(["luigid", "--background"])
-            print("Number of results", max_results)
-            print("Number of results after filtering", len(results))
-            print("Running Pipelines")
-
-            time_recorder.checkpoint("started_luigi_build")
-
-            luigi_run_result = luigi.build(results,
-                                           local_scheduler=local_scheduler,
-                                           detailed_summary=True,
-                                           logging_conf_file="logging.conf",
-                                           workers=1)
-
-            time_recorder.checkpoint("finished_luigi_build")
-
-            print(luigi_run_result.summary_text)
-            loggers[1].warning(luigi_run_result.summary_text)
-
-            print("Done!")
-            print("Killed Luigid")
-            loggers[1].warning("Killed Luigid")
-            subprocess.run(["pkill", "-f", "luigid"])
-
-        else:
-            print("No results!")
-
-        loggers[1].warning("\n{}\n{} This was dataset: {} {}\n{}\n".format(
-            "*" * 150,
-            "*" * 65,
-            ds_name,
-            "*" * (65 - len(str(ds_name))),
-            "*" * 150))
+            print(test_summary_stats_str(ds_name))
+            print("=============================================================================================\n\n")
+    else:
+        print("No results!")
 
 
 if __name__ == "__main__":
-    loggers = [logging.getLogger("luigi-root"), logging.getLogger("luigi-interface")]
-
-    datasets = [
-        359958,  # pc4 classification
-        359962,  # kc1 classification
-        361066,  # bank-marketing classification
-
-        359972,  # sylvin classification
-        146606,  #higgs
-        168868,  # APSFailure classification
-
-
-
-        # 146820,  # wilt classification
-        # 168911,  # jasmine classification
-        # 168350,  # phoneme classification contains negative values
-
-        # 359990,  # MiniBooNE classification
-
-    ]
-
-    for ds_id in datasets:
-        main(ds_id, local_scheduler=False)
-
+    seed = 42
+    main()

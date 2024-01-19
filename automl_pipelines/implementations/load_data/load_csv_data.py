@@ -1,12 +1,11 @@
 import warnings
-from sklearn.model_selection import train_test_split
-from ..template import LoadAndSplitData
+from ..template import LoadSplitData
 import pandas as pd
 
-from examples.automl.utils.time_recorder import TimeRecorder
+from utils.time_recorder import TimeRecorder
 
 
-class LoadCSVData(LoadAndSplitData):
+class LoadCSVData(LoadSplitData):
     abstract = False
 
     def run(self):
