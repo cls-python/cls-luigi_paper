@@ -34,8 +34,6 @@ pip install auto-sklearn==0.15.0
 If you are having problems with downloading Auto-Sklearn, please consult their [Github-Repository](https://github.com/automl/auto-sklearn)
 
 
-
-
 ## Running the decision pipelines example
 
 ````
@@ -54,6 +52,9 @@ The `decision_pipelines/scores_and_plots/` directory contains all scores and reg
 
 ## Running the automl pipelines example
 
+<p align="center"><img width="100%" src="images/binary_clf_pipeline_template.png" /></p>
+
+To run the automl example, use the following commands: 
 ````
 cd automl_pipelines
 python main.py
