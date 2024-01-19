@@ -35,6 +35,7 @@ If you are having problems with downloading Auto-Sklearn, please consult their [
 
 
 ## Running the decision pipelines example
+<p align="center"><img width="65%" src="images/shortest_path_decision_pipeline_template.png" /></p>
 
 ````
 cd decision_pipelines
@@ -51,7 +52,7 @@ contains all scores and regret comparison graph.
 
 ## Running the automl pipelines example
 
-<p align="center"><img width="100%" src="images/binary_clf_pipeline_template.png" /></p>
+<p align="center"><img width="65%" src="images/binary_clf_pipeline_template.png" /></p>
 
 To run the automl example, use the following commands: 
 ````
