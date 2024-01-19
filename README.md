@@ -44,7 +44,8 @@ python gather_scores_and_plot.py
 ### Pipelines outputs and regret comparison graph.
 Once completed, you may find the results of all runs under `decision_pipelines/results/` directory.
 
-The `decision_pipelines/scores_and_plots/` directory contains all scores and regret comparison graph. 
+The `decision_pipelines/scores_and_plots/` directory clear
+contains all scores and regret comparison graph. 
 
 
 
@@ -105,7 +106,9 @@ You can find the logs of all runs in the `automl_pipelines/logs/` directory.
 
 The `luigi-root.log` file contains the warnings that occurred during all runs. Note that the `luigi-interface.log` file may be too big to open, as it contains all the outputs during all runs. 
 
+## Time and run savings
 
+Checkout th Jupyter Notebook `automl_pipelines/time_and_runs_analysis.ipynb` to see our how we calculated time and run saving using luigig's caching. 
 
 ## Experiment Hardware
 
