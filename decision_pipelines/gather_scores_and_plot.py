@@ -62,7 +62,7 @@ def legend_name(regressor):
         return "LGBM (LT)"
 
 
-def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], noises=[0.0, 0.5], save_to_path="scores_and_plots", out_name="comparison_boxplot.png", show=True):
+def draw_comparison_boxplot(summaries_df, save_to_path="scores_and_plots", out_name="comparison_boxplot.png", show=True):
     boxes, labels = [], []
 
     fig, axis = plt.subplots(3, 2, figsize=(26, 18))
@@ -76,6 +76,9 @@ def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], nois
         "LightGBMModelLinearTree": "#568AC5"}
 
     dfs = []
+
+    training_sizes = sorted(summaries_df["training_size"].unique(), reverse=False)
+    noises = sorted(summaries_df["noise"].unique(), reverse=False)
 
     for ts in training_sizes:
         for n in noises:
@@ -126,7 +129,9 @@ def draw_comparison_boxplot(summaries_df, training_sizes=[100, 1000, 5000], nois
         axis[ix].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 
         # subplot title
-        axis[ix].set_title(f"Training Set Size = {ts}, Noise Half−width = {n}", fontsize=24)
+        ts = df["training_size"].unique()[0] if len(df["training_size"].unique()) == 1 else None
+        noise = df["noise"].unique()[0] if len(df["noise"].unique()) == 1 else None
+        axis[ix].set_title(f"Training Set Size = {ts}, Noise Half−width = {noise}", fontsize=24)
 
         # legend
         leg = axis[ix].legend(boxes, labels, fontsize=22, loc=2, labelspacing=0.2, handlelength=1, ncol=3, )
