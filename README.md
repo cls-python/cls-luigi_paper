@@ -103,8 +103,19 @@ You can find the logs of all runs in the `automl_pipelines/logs/` directory.
 The `luigi-root.log` file contains the warnings that occurred during all runs. Note that the `luigi-interface.log` file may be too big to open, as it contains all the outputs during all runs. 
 
 ## Running Auto-Sklearn example
-TODO!!
 
+This example should be only run after running the example in `/automl_pipelines`. 
+````
+cd askl
+python main.py
+````
+
+After this completes, you get a comparison table between AutoSklearn results and the results from the `/automl_pipelines` by running:
+
+````
+python askl_luigi_comparison.csv.py
+````
+This will produce the following csv file `cls-luigi_paper/askl/askl_luigi_comparison.csv` 
 
 ## Time and run savings
 
@@ -121,6 +132,7 @@ All experiments were run on a machine with the following specifications:
 | __GPUs__ | 2 x NVIDIA RTX 6000 Ada Generation |
 | __RAM__  | ~131.5 GB                          |
 
+And were also tested on Ubuntu 22.04 as well as Pop_OS!. 
 
 ## Running on Windows and MacOS
 The experiments in this repository are yet to be tested on Windows and MacOS operating systems. 
