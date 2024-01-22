@@ -122,6 +122,24 @@ class AutoMLTaskBase(luigi.Task, LuigiCombinator):
 
         return error_message
 
+    def set_worker_timeout_for_all_tasks(self, worker_timeout):
+        def set_worker_timeout_recursively(task, worker_timeout=worker_timeout, observed=None):
+            if observed is None:
+                observed = []
+            task.worker_timeout = worker_timeout
+            observed.append(task)
+            children = luigi.task.flatten(self.requires())
+            if children:
+                for child in children:
+                    if child not in observed:
+                        observed.append(child)
+                        set_worker_timeout_recursively(child, worker_timeout=worker_timeout, observed=observed)
+            return
+
+        set_worker_timeout_recursively(self, worker_timeout=worker_timeout)
+
+
+
 
 class TaskTimeOutHandler(object):
     @luigi.Task.event_handler(luigi.Event.TIMEOUT)
@@ -135,3 +153,5 @@ class TaskTimeOutHandler(object):
         }
         with open(f"{dataset_outputs_folder}/{self.task_id}_TIMEOUT.json", "w") as f:
             json.dump(timeout_report, f, indent=4)
+
+

@@ -92,7 +92,7 @@ def load_json(path):
 
 def dump_json(obj, path):
     with open(path, "w") as f:
-        json.dump(obj, f, indent = 4)
+        json.dump(obj, f, indent=4)
 
 
 def train_summary_stats_str(run_history):
@@ -143,3 +143,35 @@ def test_summary_stats_str(ds_name, results_dir=RESULTS_PATH):
             # stats_string += f"Test balanced accuracy: {result_json['balanced_accuracy']['test']:.2f}\n"
 
             return stats_string
+
+
+def save_test_scores_and_pipelines_for_all_datasets(results_dir=RESULTS_PATH, metric="accuracy",
+                                                    out_path="logs/test_summary.csv"):
+    dataset, classifier, feature_preprocessor, scaler, imputer, test_score = [], [], [], [], [], []
+    for _dir in listdir(results_dir):
+        if "_incumbent" in _dir:
+            ds = _dir[:-10]
+        # for ds in datasets:
+        #     if f"{ds}_incumbent" in _dir:
+            inc_dir = pjoin(results_dir, _dir)
+            for file in listdir(inc_dir):
+                if file.endswith("_run_summary.json"):
+                    run_summary = load_json(pjoin(inc_dir, file))
+                    dataset.append(ds)
+                    classifier.append(run_summary["pipeline"]["classifier"])
+                    feature_preprocessor.append(run_summary["pipeline"]["feature_preprocessor"])
+                    scaler.append(run_summary["pipeline"]["scaler"])
+                    imputer.append(run_summary["pipeline"]["imputer"])
+                    test_score.append(run_summary[metric]["test"])
+                    break
+
+    test_summary = pd.DataFrame()
+    test_summary["dataset"] = dataset
+    test_summary["classifier"] = classifier
+    test_summary["feature_preprocessor"] = feature_preprocessor
+    test_summary["scaler"] = scaler
+    test_summary["imputer"] = imputer
+    test_summary[f"test_{metric}"] = test_score
+
+    test_summary.to_csv(out_path, index=False)
+    # return test_summary

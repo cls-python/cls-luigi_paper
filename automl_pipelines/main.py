@@ -1,4 +1,5 @@
 import sys
+import time
 
 from tqdm import tqdm
 
@@ -28,33 +29,32 @@ from utils.luigi_daemon import LuigiDaemon
 from utils.time_recorder import TimeRecorder
 
 from utils.automl_scores_utils import generate_and_save_run_history, train_summary_stats_str, test_summary_stats_str, \
-    save_train_summary
+    save_train_summary, save_test_scores_and_pipelines_for_all_datasets
 
 loggers = [logging.getLogger("luigi-root"), logging.getLogger("luigi-interface")]
 
 
 def datasets():
     datasets_list = [
-        # 9967,    # steel-plates-fault
-        # 9957,    # qsar-biodeg
-        # 9952,     # phoneme
-        # 9978, #  ozone-level-8hr
-        # 145847, # hill-valley
-        # 146820, # wilt
-        # 3899,  # mozilla4
-        # 9983,  # eeg-eye-state
-        #
-        # 359962,  # kc1 classification
-        # 359958,  # pc4 classification
-        # 361066,  # bank-marketing classification
-        # 359972,  # sylvin classification
+        9967,  # steel-plates-fault
+        9957,  # qsar-biodeg
+        9952,  # phoneme
+        9978,  # ozone-level-8hr
+        145847,  # hill-valley
+        146820,  # wilt
+        3899,  # mozilla4
+        9983,  # eeg-eye-state
 
-        # 167120, #numerai28.6
-        # 9976, # Madelon
-        # 146606, # higgs
-        # 168868, # APSFailure
-        168338, # riccardo
+        359962,  # kc1 classification
+        359958,  # pc4 classification
+        361066,  # bank-marketing classification
+        359972,  # sylvin classification
 
+        167120,  # numerai28.6
+        9976,  # Madelon
+        146606,  # higgs
+        168868,  # APSFailure
+        168338,  # riccardo
 
     ]
     return datasets_list
@@ -102,7 +102,7 @@ def set_global_parameters(x_train, x_test, y_train, y_test, ds_name, seed) -> No
     global_parameters.seed = seed
 
 
-def run_train_phase(paths, pipelines, ds_name, seed):
+def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout=100):
     set_global_parameters(
         paths["train_phase"]["x_train_path"],
         paths["train_phase"]["x_valid_path"],
@@ -115,6 +115,7 @@ def run_train_phase(paths, pipelines, ds_name, seed):
     with TimeRecorder(f"logs/{ds_name}_time.json"):
         with LuigiDaemon():
             for pipeline in tqdm(pipelines):
+                # pipeline.set_worker_timeout_for_all_tasks(worker_timeout=worker_timeout)  # 100 seconds by default
                 luigi.build(
                     [pipeline],
                     local_scheduler=False,
@@ -131,7 +132,7 @@ def run_train_phase(paths, pipelines, ds_name, seed):
         "*" * 150))
 
 
-def run_test_phase(paths, best_pipeline, ds_name, seed):
+def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout=None):
     set_global_parameters(
         paths["test_phase"]["x_train_path"],
         paths["test_phase"]["x_test_path"],
@@ -141,7 +142,9 @@ def run_test_phase(paths, best_pipeline, ds_name, seed):
         seed)
 
     print(f"Running testing phase (best pipeline) for dataset {ds_name} using the training and testing datasets...")
+    best_pipeline.set_worker_timeout_for_all_tasks(worker_timeout=worker_timeout)
 
+    tick = time.time()
     with LuigiDaemon():
         luigi.build(
             [best_pipeline],
@@ -150,37 +153,43 @@ def run_test_phase(paths, best_pipeline, ds_name, seed):
             workers=1
         )
 
+    tock = time.time()
+    print(f"Testing phase took: {tock - tick:.1f} seconds")
+
+
 def main():
     os.makedirs("logs", exist_ok=True)
     import_pipeline_components()
     pipelines = generate_and_filter_pipelines()
 
     if pipelines:
-        for ds_id in datasets():
-            print(f"Downloading dataset with ID {ds_id}")
-            ds_name, paths = download_and_save_openml_dataset(ds_id, seed)
-
-            print("=============================================================================================")
-            print(f"                    Training and Testing on dataset: {ds_name}")
-            print("=============================================================================================")
-
-            run_train_phase(paths, pipelines, ds_name, seed)
-
-            run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric="accuracy")
-            print("Generated and saved training run history for dataset:", ds_name)
-            print(train_summary_stats_str(run_history_df))
-            save_train_summary(ds_name, run_history_df)
-
-            best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
-            best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
-            run_test_phase(paths, best_pipeline, ds_name, seed)
-
-            print(test_summary_stats_str(ds_name))
-            print("=============================================================================================\n\n")
+        # for ds_id in datasets():
+        #     print(f"Downloading dataset with ID {ds_id}")
+        #     ds_name, paths = download_and_save_openml_dataset(ds_id, seed)
+        #
+        #     print("=============================================================================================")
+        #     print(f"                    Training and Testing on dataset: {ds_name}")
+        #     print("=============================================================================================")
+        #
+        #     # run_train_phase(paths, pipelines, ds_name, seed)
+        #
+        #     run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric=metric)
+        #     print("Generated and saved training run history for dataset:", ds_name)
+        #     print(train_summary_stats_str(run_history_df))
+        #     save_train_summary(ds_name, run_history_df)
+        #
+        #     best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
+        #     best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
+        #     run_test_phase(paths, best_pipeline, ds_name, seed)
+        #
+        #     print(test_summary_stats_str(ds_name))
+        #     print("=============================================================================================\n\n")
+        save_test_scores_and_pipelines_for_all_datasets(metric=metric)
     else:
         print("No results!")
 
 
 if __name__ == "__main__":
     seed = 42
+    metric = "accuracy"
     main()
