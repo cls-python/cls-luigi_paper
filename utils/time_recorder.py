@@ -1,7 +1,8 @@
-import json
 from time import time
 from time import sleep
 import os
+
+from utils.io_methods import load_json, dump_json
 
 
 class TimeRecorder(object):
@@ -30,12 +31,12 @@ class TimeRecorder(object):
         }
 
         if os.path.exists(self.out_file_path):
-            with open(self.out_file_path, "r") as existing_json:
-                existing_json = json.load(existing_json)
+            existing_json = load_json(self.out_file_path)
             output_dict.update(existing_json)
 
-        with open(self.out_file_path, "w") as out_file:
-            json.dump(output_dict, out_file, indent=3)
+        dump_json(output_dict, self.out_file_path)
+
+
 
 
 if __name__ == "__main__":

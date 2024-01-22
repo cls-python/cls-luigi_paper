@@ -1,15 +1,13 @@
+import sys
+sys.path.append("..")
+
 import pandas as pd
 from os.path import join as pjoin
-import json
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
-
-
-def load_json(file_path):
-    with open(file_path, "r") as f:
-        return json.load(f)
+from utils.io_methods import load_json
 
 
 def collect_and_save_summaries(results_path="results", save_to_path="scores_and_plots", out_name="scores.csv"):

@@ -1,10 +1,11 @@
 import pandas as pd
 from os import listdir, makedirs
 from os.path import join as pjoin
-import json
 from cls_luigi import RESULTS_PATH
 
 OUTDIR = "run_histories"
+
+from utils.io_methods import load_json, dump_json
 
 
 def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUTDIR, sort_by_metric="accuracy"):
@@ -83,16 +84,6 @@ def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUT
     run_history_df.to_csv(pjoin(out_dir, f"{ds_name}_train_run_history.csv"), index=False)
 
     return run_history_df
-
-
-def load_json(path):
-    with open(path, "r") as f:
-        return json.load(f)
-
-
-def dump_json(obj, path):
-    with open(path, "w") as f:
-        json.dump(obj, f, indent=4)
 
 
 def train_summary_stats_str(run_history):
