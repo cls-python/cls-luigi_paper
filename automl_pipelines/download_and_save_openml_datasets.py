@@ -1,3 +1,4 @@
+import time
 import warnings
 
 import numpy as np
@@ -12,11 +13,12 @@ def download_and_save_openml_dataset(dataset_id, seed):
 
         paths = {}
 
-        X, y, ds_name = _get_openml_dataset(dataset_id)
+        task = tasks.get_task(dataset_id)
+        X, y = task.get_X_and_y(dataset_format='dataframe')
         y = _encode_classification_labels(y)
         X = _drop_unnamed_col(X)
+        ds_name = task.get_dataset().name
 
-        task = tasks.get_task(dataset_id)
         train_indices, test_indices = task.get_train_test_split_indices(
             repeat=0,
             fold=0,
@@ -28,11 +30,11 @@ def download_and_save_openml_dataset(dataset_id, seed):
         y_train = y.iloc[train_indices]
         y_test = y.iloc[test_indices]
 
-        test_dataset_dir = f"datasets/{ds_name}/testing_phase"
+        test_dataset_dir = f"datasets/{ds_name}/test_phase"
         os.makedirs(test_dataset_dir, exist_ok=True)
 
 
-        x_train_path = os.path.join(test_dataset_dir, "test_phase.csv")
+        x_train_path = os.path.join(test_dataset_dir, "x_train.csv")
         y_train_path = os.path.join(test_dataset_dir, "y_train.csv")
         x_test_path = os.path.join(test_dataset_dir, "x_test.csv")
         y_test_path = os.path.join(test_dataset_dir, "y_test.csv")
@@ -54,7 +56,7 @@ def download_and_save_openml_dataset(dataset_id, seed):
 
         # train validation split
         x_train, x_valid, y_train, y_valid = train_test_split(
-            x_train, y_train, test_size=0.33, random_state=seed)
+            x_train, y_train, test_size=0.33, random_state=seed, shuffle=True)
 
         x_train_path = os.path.join(train_dataset_dir, "x_train.csv")
         y_train_path = os.path.join(train_dataset_dir, "y_train.csv")
@@ -88,20 +90,16 @@ def _get_openml_dataset(task_id):
 # todo
 def _encode_classification_labels(y):
     classes = sorted(list(y.unique()))
+    assert len(classes) == 2, "There exists more than two classes!"
 
-    if isinstance(classes[0], str) and isinstance(classes[1], str):
-        if classes[0].isnumeric() and classes[1].isnumeric():
-            y = y.map(lambda x: 0 if x == classes[0] else 1)
-        elif classes[0].isnumeric() is False and classes[1].isnumeric() is False:
-            y = y.map(lambda x: 0 if x == "neg" else 1)
-        else:
-            raise TypeError("Label is string but neither numeric or neg/pos")
-    elif (isinstance(classes[0], bool) and isinstance(classes[1], bool)) or \
-            (isinstance(classes[0], np.bool_) and isinstance(classes[1], np.bool_)):
+    if isinstance(classes[0], (int, float, str)) and isinstance(classes[1], (int, float, str)):
+        y = y.map(lambda x: 0 if x == classes[0] else 1)
+
+    elif isinstance(classes[0], (bool, np.bool_)) and isinstance(classes[1], (bool, np.bool_)):
         y = y.map(lambda x: 0 if x == False else 1)
 
     else:
-        raise TypeError("Label is not string nor bool")
+        raise TypeError("Label is not string, bool, or numeric")
 
     return y
 
@@ -114,20 +112,3 @@ def _drop_unnamed_col(df):
     return df
 
 
-if __name__ == "__main__":
-
-    task_list = [
-        361066,  # bank-marketing classification
-        # 146820,  # wilt classification
-        # 168868,  # APSFailure classification
-        # 168911,  # jasmine classification
-        # 168350,  # phoneme classification contains negative values
-        359958,  # pc4 classification
-        359962,  # kc1 classification
-        359972,  # sylvin classification
-        # 359990,  # MiniBooNE classification
-        # 146606,  #higgs
-    ]
-
-    for task_id in task_list:
-        download_and_save_openml_dataset(task_id)
