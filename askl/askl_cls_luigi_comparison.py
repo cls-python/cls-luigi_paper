@@ -1,9 +1,10 @@
 import sys
+sys.path.append("..")
 import os
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(ROOT)
-sys.path.append("..")
+
 
 import pandas as pd
 from os import listdir
@@ -11,7 +12,7 @@ from os.path import join as pjoin
 import math
 from utils.io_methods import load_json
 
-def generate_and_save_askl_cls_comparison_csv(askl_results_path="askl/results/"):
+def generate_and_save_askl_cls_comparison_csv(askl_results_path=ROOT+"/askl/results/"):
     dataset, askl_run_time, cls_luigi_run_time, askl_n_pipelines, cls_luigi_n_pipelines, \
         askl_test_accuracy, cls_luigi_test_accuracy = [], [], [], [], [], [], []
 
@@ -20,8 +21,8 @@ def generate_and_save_askl_cls_comparison_csv(askl_results_path="askl/results/")
     askl_scaler, cls_luigi_scaler = [], []
 
     for ds in listdir(askl_results_path):
-        if ds == 'madelon':
-            continue
+        # if 'numerai28.6' in ds:
+        #     continue
 
         dataset.append(ds)
 
@@ -75,7 +76,9 @@ def generate_and_save_askl_cls_comparison_csv(askl_results_path="askl/results/")
 
     df.sort_values("winner", inplace=True, ascending=False)
 
-    df.to_csv("askl/askl_luigi_comparison.csv", index=False)
+
+    out_path = pjoin(ROOT, "askl/askl_luigi_comparison.csv")
+    df.to_csv(out_path, index=False)
 
 
 def return_winner(row):

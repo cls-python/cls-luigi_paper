@@ -17,25 +17,24 @@ from utils.io_methods import load_json, dump_pickle, dump_json
 
 def datasets():
     datasets_names = [
-        #'sylvine',
-        #'bank-marketing',
-        #'kc1',
-        #'phoneme',
+        'sylvine',
+        'bank-marketing',
+        'kc1',
+        'phoneme',
 
-        # 'pc4', # exists in autosklearn
-        # 'wilt', # exists in autosklearn
-        # 'qsar-biodeg', # exists in autosklearn
-        # 'mozilla4', # exists in autosklearn
-        # 'steel-plates-fault', # exists in autosklearn
-        # 'ozone-level-8hr', # exists in autosklearn
-        # 'eeg-eye-state', # exists in autosklearn
+        'pc4', # exists in autosklearn
+        'wilt', # exists in autosklearn
+        'qsar-biodeg', # exists in autosklearn
+        'mozilla4', # exists in autosklearn
+        'steel-plates-fault', # exists in autosklearn
+        'ozone-level-8hr', # exists in autosklearn
+        'eeg-eye-state', # exists in autosklearn
 
-        # 'madelon',  # exists in autosklearn
-        # 'numerai28.6',
-        # 'higgs',
-        # 'APSFailure',
-        # 'riccardo',
-        "kc2"
+        'madelon',  # exists in autosklearn
+        'numerai28.6',
+        'higgs',
+        'APSFailure',
+        'riccardo',
 
     ]
 
