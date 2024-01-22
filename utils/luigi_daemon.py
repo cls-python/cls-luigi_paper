@@ -8,7 +8,7 @@ class LuigiDaemon:
         self.logger = logger
 
     def __enter__(self):
-        subprocess.run(["luigid", "--background"])
+        subprocess.run(["luigid", "--background", "--logdir", "~/"])
         if self.logger is not None:
             self.logger.warning("Started Luigi daemon...")
         else:

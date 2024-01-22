@@ -163,27 +163,27 @@ def main():
     pipelines = generate_and_filter_pipelines()
 
     if pipelines:
-        # for ds_id in datasets():
-        #     print(f"Downloading dataset with ID {ds_id}")
-        #     ds_name, paths = download_and_save_openml_dataset(ds_id, seed)
-        #
-        #     print("=============================================================================================")
-        #     print(f"                    Training and Testing on dataset: {ds_name}")
-        #     print("=============================================================================================")
-        #
-        #     # run_train_phase(paths, pipelines, ds_name, seed)
-        #
-        #     run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric=metric)
-        #     print("Generated and saved training run history for dataset:", ds_name)
-        #     print(train_summary_stats_str(run_history_df))
-        #     save_train_summary(ds_name, run_history_df)
-        #
-        #     best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
-        #     best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
-        #     run_test_phase(paths, best_pipeline, ds_name, seed)
-        #
-        #     print(test_summary_stats_str(ds_name))
-        #     print("=============================================================================================\n\n")
+        for ds_id in datasets():
+            print(f"Downloading dataset with ID {ds_id}")
+            ds_name, paths = download_and_save_openml_dataset(ds_id, seed)
+
+            print("=============================================================================================")
+            print(f"                    Training and Testing on dataset: {ds_name}")
+            print("=============================================================================================")
+
+            run_train_phase(paths, pipelines, ds_name, seed)
+
+            run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric=metric)
+            print("Generated and saved training run history for dataset:", ds_name)
+            print(train_summary_stats_str(run_history_df))
+            save_train_summary(ds_name, run_history_df)
+
+            best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
+            best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
+            run_test_phase(paths, best_pipeline, ds_name, seed)
+
+            print(test_summary_stats_str(ds_name))
+            print("=============================================================================================\n\n")
         save_test_scores_and_pipelines_for_all_datasets(metric=metric)
     else:
         print("No results!")

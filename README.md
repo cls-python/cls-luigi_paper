@@ -61,12 +61,6 @@ cd automl_pipelines
 python main.py
 ````
 
-If you face a PermissionError you may need to change the ownership of the `/var/log/` directory as follows:
-
-````
-sudo chmod a+rwx /var/log/
-````
-
 IMPORTANT: The resulting pipelines are designed to handle only binary-classification problems with numerical & dense features!
 
 
