@@ -7,10 +7,10 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
 from cls_luigi.inhabitation_task import ClsParameter
-from .autosklearn_task_base import AutoSklearnTask
+from .automl_task_base import AutoMLTaskBase
 
 
-class LoadSplitData(AutoSklearnTask):
+class LoadSplitData(AutoMLTaskBase):
     abstract = True
 
     def output(self):
@@ -23,7 +23,7 @@ class LoadSplitData(AutoSklearnTask):
         }
 
 
-class DataPreprocessor(AutoSklearnTask):
+class DataPreprocessor(AutoMLTaskBase):
     abstract = True
 
 
@@ -195,7 +195,7 @@ class FeaturePreprocessor(DataPreprocessor):
             self._log_warnings(w)
 
 
-class Classifier(AutoSklearnTask):
+class Classifier(AutoMLTaskBase):
     abstract = True
     processed_features = ClsParameter(tpe=DataPreprocessor.return_type())
     original_features_and_targets = ClsParameter(tpe=LoadSplitData.return_type())

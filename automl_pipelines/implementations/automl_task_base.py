@@ -11,7 +11,7 @@ from cls_luigi.inhabitation_task import LuigiCombinator
 from .global_parameters import GlobalParameters
 
 
-class AutoSklearnTask(luigi.Task, LuigiCombinator):
+class AutoMLTaskBase(luigi.Task, LuigiCombinator):
     worker_timeout = 100
 
     def __init__(self, *args, **kwargs):

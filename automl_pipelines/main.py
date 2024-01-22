@@ -27,17 +27,35 @@ from import_pipeline_components import import_pipeline_components
 from utils.luigi_daemon import LuigiDaemon
 from utils.time_recorder import TimeRecorder
 
-from utils.automl_scores_utils import generate_and_save_run_history, train_summary_stats_str, test_summary_stats_str
+from utils.automl_scores_utils import generate_and_save_run_history, train_summary_stats_str, test_summary_stats_str, \
+    save_train_summary
 
 loggers = [logging.getLogger("luigi-root"), logging.getLogger("luigi-interface")]
 
 
 def datasets():
     datasets_list = [
-        359962,  # kc1 classification
-        359958,  # pc4 classification
-        361066,  # bank-marketing classification
-        359972,  # sylvin classification
+        # 9967,    # steel-plates-fault
+        # 9957,    # qsar-biodeg
+        # 9952,     # phoneme
+        # 9978, #  ozone-level-8hr
+        # 145847, # hill-valley
+        # 146820, # wilt
+        # 3899,  # mozilla4
+        # 9983,  # eeg-eye-state
+        #
+        # 359962,  # kc1 classification
+        # 359958,  # pc4 classification
+        # 361066,  # bank-marketing classification
+        # 359972,  # sylvin classification
+
+        # 167120, #numerai28.6
+        # 9976, # Madelon
+        # 146606, # higgs
+        # 168868, # APSFailure
+        168338, # riccardo
+
+
     ]
     return datasets_list
 
@@ -139,6 +157,7 @@ def main():
 
     if pipelines:
         for ds_id in datasets():
+            print(f"Downloading dataset with ID {ds_id}")
             ds_name, paths = download_and_save_openml_dataset(ds_id, seed)
 
             print("=============================================================================================")
@@ -147,9 +166,10 @@ def main():
 
             run_train_phase(paths, pipelines, ds_name, seed)
 
-            run_history_df = generate_and_save_run_history(ds_name=ds_name, metric="balanced_accuracy")
+            run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric="accuracy")
             print("Generated and saved training run history for dataset:", ds_name)
             print(train_summary_stats_str(run_history_df))
+            save_train_summary(ds_name, run_history_df)
 
             best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
             best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
