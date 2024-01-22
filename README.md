@@ -67,7 +67,7 @@ If you face a PermissionError you may need to change the ownership of the `/var/
 sudo chmod a+rwx /var/log/
 ````
 
-IMPORTANT: The resulting pipelines are designed to handle only binary-classification problems with numerical features!
+IMPORTANT: The resulting pipelines are designed to handle only binary-classification problems with numerical & dense features!
 
 
 ### Pipeline outputs and dataset splitting
