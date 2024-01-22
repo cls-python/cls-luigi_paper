@@ -7,7 +7,7 @@ from cls_luigi import RESULTS_PATH
 OUTDIR = "run_histories"
 
 
-def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUTDIR, metric="balanced_accuracy"):
+def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUTDIR, sort_by_metric="accuracy"):
     makedirs(out_dir, exist_ok=True)
 
     imputer_col = []
@@ -15,9 +15,9 @@ def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUT
     feature_preprocessor_col = []
     classifier_col = []
     train_accuracy = []
-    test_accuracy = []
+    valid_accuracy = []
     train_balanced_accuracy = []
-    test_balanced_accuracy = []
+    valid_balanced_accuracy = []
     last_task_col = []
     status = []
 
@@ -37,9 +37,9 @@ def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUT
                     feature_preprocessor_col.append(pipeline["feature_preprocessor"])
                     classifier_col.append(pipeline["classifier"])
                     train_accuracy.append(result_json["accuracy"]["train"])
-                    test_accuracy.append(result_json["accuracy"]["test"])
+                    valid_accuracy.append(result_json["accuracy"]["test"])
                     train_balanced_accuracy.append(result_json["balanced_accuracy"]["train"])
-                    test_balanced_accuracy.append(result_json["balanced_accuracy"]["test"])
+                    valid_balanced_accuracy.append(result_json["balanced_accuracy"]["test"])
                     last_task_col.append(result_json["last_task"])
 
                 elif "FAILURE" in file:
@@ -50,9 +50,9 @@ def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUT
                     feature_preprocessor_col.append(None)
                     classifier_col.append(None)
                     train_accuracy.append(None)
-                    test_accuracy.append(None)
+                    valid_accuracy.append(None)
                     train_balanced_accuracy.append(None)
-                    test_balanced_accuracy.append(None)
+                    valid_balanced_accuracy.append(None)
 
                 elif "TIMEOUT" in file:
                     last_task_col.append(result_json["task_id"])
@@ -62,9 +62,9 @@ def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUT
                     feature_preprocessor_col.append(None)
                     classifier_col.append(None)
                     train_accuracy.append(None)
-                    test_accuracy.append(None)
+                    valid_accuracy.append(None)
                     train_balanced_accuracy.append(None)
-                    test_balanced_accuracy.append(None)
+                    valid_balanced_accuracy.append(None)
 
     run_history_df = pd.DataFrame()
 
@@ -73,13 +73,13 @@ def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUT
     run_history_df["feature_preprocessor"] = feature_preprocessor_col
     run_history_df["classifier"] = classifier_col
     run_history_df["train_accuracy"] = train_accuracy
-    run_history_df["test_accuracy"] = test_accuracy
+    run_history_df["valid_accuracy"] = valid_accuracy
     run_history_df["train_balanced_accuracy"] = train_balanced_accuracy
-    run_history_df["test_balanced_accuracy"] = test_balanced_accuracy
+    run_history_df["valid_balanced_accuracy"] = valid_balanced_accuracy
     run_history_df["last_task"] = last_task_col
     run_history_df["status"] = status
 
-    run_history_df.sort_values(by=f"test_{metric}", ascending=False, inplace=True)
+    run_history_df.sort_values(by=f"valid_{sort_by_metric}", ascending=False, inplace=True)
     run_history_df.to_csv(pjoin(out_dir, f"{ds_name}_train_run_history.csv"), index=False)
 
     return run_history_df
@@ -90,33 +90,56 @@ def load_json(path):
         return json.load(f)
 
 
-def train_summary_stats_str(lb_df):
+def dump_json(obj, path):
+    with open(path, "w") as f:
+        json.dump(obj, f, indent = 4)
+
+
+def train_summary_stats_str(run_history):
     stats_string = "\n========== Training Stats ==========\n"
-    stats_string += f"Number of runs: {len(lb_df)}\n"
-    stats_string += f"Successful runs: {len(lb_df[lb_df['status'] == 'success'])}\n"
-    stats_string += f"Failed runs: {len(lb_df[lb_df['status'] == 'failed'])}\n"
-    stats_string += f"Timeout runs: {len(lb_df[lb_df['status'] == 'timeout'])}\n"
+    stats_string += f"Number of runs: {len(run_history)}\n"
+    stats_string += f"Successful runs: {len(run_history[run_history['status'] == 'success'])}\n"
+    stats_string += f"Failed runs: {len(run_history[run_history['status'] == 'failed'])}\n"
+    stats_string += f"Timeout runs: {len(run_history[run_history['status'] == 'timeout'])}\n"
     stats_string += f"Best pipeline components: "
-    stats_string += f"Imputer: {lb_df.iloc[0]['imputer']}, "
-    stats_string += f"Scaler: {lb_df.iloc[0]['scaler']}, "
-    stats_string += f"Feature Preprocessor: {lb_df.iloc[0]['feature_preprocessor']}, "
-    stats_string += f"Classifier: {lb_df.iloc[0]['classifier']}\n"
-    stats_string += f"Validation balanced accuracy: {lb_df.iloc[0]['test_balanced_accuracy']:.2f}\n"
-    stats_string += f"Validation accuracy: {lb_df.iloc[0]['test_accuracy']:.2f}\n"
+    stats_string += f"Imputer: {run_history.iloc[0]['imputer']}, "
+    stats_string += f"Scaler: {run_history.iloc[0]['scaler']}, "
+    stats_string += f"Feature Preprocessor: {run_history.iloc[0]['feature_preprocessor']}, "
+    stats_string += f"Classifier: {run_history.iloc[0]['classifier']}\n"
+
+    # stats_string += f"Validation balanced accuracy: {lb_df.iloc[0]['test_balanced_accuracy']:.2f}\n"
+    stats_string += f"Validation accuracy: {run_history.iloc[0]['valid_accuracy']:.2f}\n"
     stats_string += "===================================\n"
     return stats_string
 
 
+def save_train_summary(dataset, run_history, metric="accuracy", out_path="logs"):
+    summary = {
+        "n_runs": len(run_history),
+        "successful": len(run_history[run_history['status'] == 'success']),
+        "failed": len(run_history[run_history['status'] == 'failed']),
+        "timeout": len(run_history[run_history['status'] == 'timeout']),
+        "best_pipeline": [run_history.iloc[0]['imputer'], run_history.iloc[0]['scaler'],
+                          run_history.iloc[0]['feature_preprocessor'], run_history.iloc[0]['classifier']],
+        f"train_{metric}": run_history.iloc[0][f'train_{metric}'],
+        f"validation_{metric}": run_history.iloc[0][f'valid_{metric}']
+    }
+
+    path = pjoin(out_path, f"{dataset}_train_summary.json")
+    dump_json(summary, path)
+
+
 def test_summary_stats_str(ds_name, results_dir=RESULTS_PATH):
     stats_string = "\n========== Testing Stats ==========\n"
+    inc_dir = pjoin(results_dir, ds_name + "_incumbent")
 
-    for file in listdir(pjoin(results_dir, ds_name + "_incumbent")):
+    for file in listdir(inc_dir):
         if file.endswith("json") and "run_summary" in file:
-            result_json = load_json(pjoin(results_dir, ds_name, file))
+            result_json = load_json(pjoin(inc_dir, file))
             stats_string += f"Train accuracy: {result_json['accuracy']['train']:.2f}\n"
             stats_string += f"Test accuracy: {result_json['accuracy']['test']:.2f}\n"
 
-            stats_string += f"Train balanced accuracy: {result_json['balanced_accuracy']['train']:.2f}\n"
-            stats_string += f"Test balanced accuracy: {result_json['balanced_accuracy']['test']:.2f}\n"
+            # stats_string += f"Train balanced accuracy: {result_json['balanced_accuracy']['train']:.2f}\n"
+            # stats_string += f"Test balanced accuracy: {result_json['balanced_accuracy']['test']:.2f}\n"
 
             return stats_string
