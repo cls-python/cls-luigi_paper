@@ -25,6 +25,7 @@ pip install PyEPO/pkg/.
 
 pip install -r requirements.txt
 ```
+Note that running decision_pipeline example requires a Gurobi license. Consult [Gurobi website](https://www.gurobi.com/) to aquire aquire and install your license on your machine. 
 
 For running the example in "auto-sklearn" directory we used Python 3.8.18. You may install the library "Auto-Sklearn" as follows:
 
