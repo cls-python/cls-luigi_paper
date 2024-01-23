@@ -107,7 +107,7 @@ def draw_comparison_boxplot(summaries_df, save_to_path="scores_and_plots", out_n
             y_pos_factor += 0.14
 
         # grid
-        axis[ix].grid(color="grey", alpha=0.5, linewidth=0.5, which="major", axis="y")
+        axis[ix].grid(color="grey", alpha=0.5, linewidth=2.5, which="major", axis="y")
 
         # axis labels
         if ix % 2 == 0:
