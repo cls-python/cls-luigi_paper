@@ -4,11 +4,12 @@ from time import sleep
 
 class LuigiDaemon:
 
-    def __init__(self, logger=None):
+    def __init__(self, logger=None, logdir="/tmp/"):
         self.logger = logger
+        self.logdir = logdir
 
     def __enter__(self):
-        subprocess.run(["luigid", "--background", "--logdir", "~/"])
+        subprocess.run(["luigid", "--background", "--logdir", self.logdir])
         if self.logger is not None:
             self.logger.warning("Started Luigi daemon...")
         else:
