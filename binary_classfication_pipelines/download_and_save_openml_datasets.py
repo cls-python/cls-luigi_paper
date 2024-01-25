@@ -1,7 +1,7 @@
-import time
 import warnings
 
 import numpy as np
+import pandas as pd
 from openml import tasks
 import os
 
@@ -10,7 +10,6 @@ from sklearn.model_selection import train_test_split
 
 def download_and_save_openml_dataset(dataset_id, seed):
     with warnings.catch_warnings(record=True) as w:
-
         paths = {}
 
         task = tasks.get_task(dataset_id)
@@ -32,7 +31,6 @@ def download_and_save_openml_dataset(dataset_id, seed):
 
         test_dataset_dir = f"datasets/{ds_name}/test_phase"
         os.makedirs(test_dataset_dir, exist_ok=True)
-
 
         x_train_path = os.path.join(test_dataset_dir, "x_train.csv")
         y_train_path = os.path.join(test_dataset_dir, "y_train.csv")
@@ -78,7 +76,6 @@ def download_and_save_openml_dataset(dataset_id, seed):
         return ds_name, paths
 
 
-
 def _get_openml_dataset(task_id):
     task = tasks.get_task(task_id)
     X, y = task.get_X_and_y(dataset_format='dataframe')
@@ -112,3 +109,66 @@ def _drop_unnamed_col(df):
     return df
 
 
+def get_dataset_information(task_id):
+    x, _, ds_name = _get_openml_dataset(task_id)
+
+    n_cols = x.shape[1]
+    n_rows = x.shape[0]
+    n_nans = np.count_nonzero(np.isnan(x))
+    n_cols_with_nans = 0
+
+    for c in x.columns:
+        n_cols_with_nans += np.count_nonzero(np.isnan(x[c]))
+
+    x["n_nans"] = x.apply(lambda row: row.isna().sum(), axis=1)
+
+    n_rows_with_nans = x[x["n_nans"] > 0].shape[0]
+
+    return ds_name, n_cols, n_rows, n_nans, n_cols_with_nans, n_rows_with_nans
+
+
+def gather_dataset_information(dataset_ids, out_path="datasets/datasets_info.csv"):
+    info_dict = {
+        "ds_name": [],
+        "n_cols": [],
+        "n_rows": [],
+        "n_nans": [],
+        "n_cols_with_nans": [],
+        "n_rows_with_nans": []
+    }
+    for ds in dataset_ids:
+        _ds_name, _n_cols, _n_rows, _n_nans, _n_cols_with_nans, _n_rows_with_nans = get_dataset_information(ds)
+        info_dict["ds_name"].append(_ds_name)
+        info_dict["n_cols"].append(_n_cols)
+        info_dict["n_rows"].append(_n_rows)
+        info_dict["n_nans"].append(_n_nans)
+        info_dict["n_cols_with_nans"].append(_n_cols_with_nans)
+        info_dict["n_rows_with_nans"].append(_n_rows_with_nans)
+
+
+
+    info_df = pd.DataFrame.from_dict(info_dict)
+    info_df.to_csv(out_path, index=False)
+
+
+if __name__ == "__main__":
+    datasets_ids = [
+        9967,  # steel-plates-fault
+        9957,  # qsar-biodeg
+        9952,  # phoneme
+        9978,  # ozone-level-8hr
+        145847,  # hill-valley
+        146820,  # wilt
+        3899,  # mozilla4
+        9983,  # eeg-eye-state
+        359962,  # kc1 classification
+        359958,  # pc4 classification
+        361066,  # bank-marketing classification
+        359972,  # sylvin classification
+        167120,  # numerai28.6
+        9976,  # Madelon
+        146606,  # higgs
+        168868,  # APSFailure
+        168338,  # riccardo
+    ]
+    gather_dataset_information(datasets_ids)

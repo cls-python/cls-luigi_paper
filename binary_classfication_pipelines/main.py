@@ -34,30 +34,29 @@ from utils.automl_scores_utils import generate_and_save_run_history, train_summa
 loggers = [logging.getLogger("luigi-root"), logging.getLogger("luigi-interface")]
 
 
-def datasets():
-    datasets_list = [
-        9967,  # steel-plates-fault
-        9957,  # qsar-biodeg
-        9952,  # phoneme
-        9978,  # ozone-level-8hr
-        145847,  # hill-valley
-        146820,  # wilt
-        3899,  # mozilla4
-        9983,  # eeg-eye-state
+# def datasets():
+#     datasets_list = [
+#         # 9967,  # steel-plates-fault
+#         # 9957,  # qsar-biodeg
+#         # 9952,  # phoneme
+#         # 9978,  # ozone-level-8hr
+#         # 145847,  # hill-valley
+#         # 146820,  # wilt
+#         # 3899,  # mozilla4
+#         # 9983,  # eeg-eye-state
+#         359962,  # kc1 classification
+#         # 359958,  # pc4 classification
+#         # 361066,  # bank-marketing classification
+#         # 359972,  # sylvin classification
+#         # 167120,  # numerai28.6
+#         # 9976,  # Madelon
+#         # 146606,  # higgs
+#         # 168868,  # APSFailure
+#         # 168338,  # riccardo
 
-        359962,  # kc1 classification
-        359958,  # pc4 classification
-        361066,  # bank-marketing classification
-        359972,  # sylvin classification
 
-        167120,  # numerai28.6
-        9976,  # Madelon
-        146606,  # higgs
-        168868,  # APSFailure
-        168338,  # riccardo
-
-    ]
-    return datasets_list
+#     ]
+#     return datasets_list
 
 
 def generate_and_filter_pipelines():
@@ -157,33 +156,33 @@ def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout=None):
     print(f"Testing phase took: {tock - tick:.1f} seconds")
 
 
-def main():
+def main(pipelines, seed, metric):
     os.makedirs("logs", exist_ok=True)
-    import_pipeline_components()
-    pipelines = generate_and_filter_pipelines()
+    # import_pipeline_components()
+    # pipelines = generate_and_filter_pipelines()
 
     if pipelines:
-        for ds_id in datasets():
-            print(f"Downloading dataset with ID {ds_id}")
-            ds_name, paths = download_and_save_openml_dataset(ds_id, seed)
+        # for ds_id in datasets():
+        print(f"Downloading dataset with ID {ds_id}")
+        ds_name, paths = download_and_save_openml_dataset(ds_id, seed)
 
-            print("=============================================================================================")
-            print(f"                    Training and Testing on dataset: {ds_name}")
-            print("=============================================================================================")
+        print("=============================================================================================")
+        print(f"                    Training and Testing on dataset: {ds_name}")
+        print("=============================================================================================")
 
-            run_train_phase(paths, pipelines, ds_name, seed)
+        run_train_phase(paths, pipelines, ds_name, seed)
 
-            run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric=metric)
-            print("Generated and saved training run history for dataset:", ds_name)
-            print(train_summary_stats_str(run_history_df))
-            save_train_summary(ds_name, run_history_df)
+        run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric=metric)
+        print("Generated and saved training run history for dataset:", ds_name)
+        print(train_summary_stats_str(run_history_df))
+        save_train_summary(ds_name, run_history_df)
 
-            best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
-            best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
-            run_test_phase(paths, best_pipeline, ds_name, seed)
+        best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
+        best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
+        run_test_phase(paths, best_pipeline, ds_name, seed)
 
-            print(test_summary_stats_str(ds_name))
-            print("=============================================================================================\n\n")
+        print(test_summary_stats_str(ds_name))
+        print("=============================================================================================\n\n")
         save_test_scores_and_pipelines_for_all_datasets(metric=metric)
     else:
         print("No results!")
@@ -192,4 +191,35 @@ def main():
 if __name__ == "__main__":
     seed = 42
     metric = "accuracy"
-    main()
+    datasets_ids = [
+        # 9967,  # steel-plates-fault
+        # 9957,  # qsar-biodeg
+        # 9952,  # phoneme
+        # 9978,  # ozone-level-8hr
+        # 145847,  # hill-valley
+        # 146820,  # wilt
+        # 3899,  # mozilla4
+        # 9983,  # eeg-eye-state
+        359962,  # kc1 classification
+        # 359958,  # pc4 classification
+        # 361066,  # bank-marketing classification
+        # 359972,  # sylvin classification
+        # 167120,  # numerai28.6
+        # 9976,  # Madelonsave_test_scores_and_pipelines_for_all_datasets
+        # 146606,  # higgs
+        # 168868,  # APSFailure
+        # 168338,  # riccardo
+    ]
+    
+    
+    import_pipeline_components()
+    pipelines = generate_and_filter_pipelines()
+    
+    for ds_id in datasets_ids:
+    
+        main(pipelines, seed, metric)
+    
+    
+    save_test_scores_and_pipelines_for_all_datasets(metric=metric)
+
+

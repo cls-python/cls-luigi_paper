@@ -21,8 +21,8 @@ def generate_and_save_askl_cls_comparison_csv(askl_results_path=ROOT+"/askl/resu
     askl_scaler, cls_luigi_scaler = [], []
 
     for ds in listdir(askl_results_path):
-        # if 'numerai28.6' in ds:
-        #     continue
+        if ds == "higgs":
+            continue
 
         dataset.append(ds)
 
@@ -38,12 +38,12 @@ def generate_and_save_askl_cls_comparison_csv(askl_results_path=ROOT+"/askl/resu
         askl_f_preproc.append(map_component_name(askl_best_pipeline_summary["feature_preprocessor"]))
         askl_clf.append(map_component_name(askl_best_pipeline_summary["classifier"]))
 
-        cls_luigi_run_time_json = load_json(pjoin(ROOT, f"automl_pipelines/logs/{ds}_time.json"))
+        cls_luigi_run_time_json = load_json(pjoin(ROOT, f"binary_classfication_pipelines/logs/{ds}_time.json"))
         cls_luigi_run_time.append(cls_luigi_run_time_json["total_seconds"])
 
-        cls_luigi_run_history = pd.read_csv(pjoin(ROOT, f"automl_pipelines/run_histories/{ds}_train_run_history.csv"))
+        cls_luigi_run_history = pd.read_csv(pjoin(ROOT, f"binary_classfication_pipelines/run_histories/{ds}_train_run_history.csv"))
         cls_luigi_n_pipelines.append(cls_luigi_run_history.shape[0])
-        cls_test_summary = pd.read_csv(pjoin(ROOT, "automl_pipelines/logs/test_summary.csv"))
+        cls_test_summary = pd.read_csv(pjoin(ROOT, "binary_classfication_pipelines/logs/test_summary.csv"))
 
         ds_test_summary = cls_test_summary[cls_test_summary["dataset"] == ds]
         cls_luigi_test_accuracy.append(ds_test_summary["test_accuracy"].iloc[0])
@@ -77,7 +77,7 @@ def generate_and_save_askl_cls_comparison_csv(askl_results_path=ROOT+"/askl/resu
     df.sort_values("winner", inplace=True, ascending=False)
 
 
-    out_path = pjoin(ROOT, "askl/askl_luigi_comparison.csv")
+    out_path = pjoin(ROOT, "askl/askl_cls_luigi_comparison.csv")
     df.to_csv(out_path, index=False)
 
 
