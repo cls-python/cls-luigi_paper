@@ -23,7 +23,6 @@ class LuigiDaemon:
         if self.system == "Windows":
             subprocess.Popen(
                 ["luigid", "--logdir", self.logdir],
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
             )
         else:
             subprocess.run(["luigid", "--background", "--logdir", self.logdir])
