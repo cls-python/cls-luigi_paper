@@ -115,7 +115,7 @@ After this completes, you get a comparison table between AutoSklearn results and
 ````
 python askl_luigi_comparison.csv.py
 ````
-This will produce the following csv file `cls-luigi_paper/askl/askl_luigi_comparison.csv` 
+This will produce the following csv file `cls-luigi_paper/askl/askl_cls_luigi_comparison.csv` 
 
 ## Time and run savings
 
