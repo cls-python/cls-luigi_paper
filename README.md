@@ -13,11 +13,11 @@ This repository contains the official implementation of the examples in the pape
 }
 ```
 
-## Python virtual environments and dependencies
+## Installations
 
 Note that we used two separate virtual environments to execute the examples in this repository. This is because Auto-Sklearn doesn't support Python> 3.9 while CLS-Luigi requires Python 3.11.
 
-for running the examples `automl_pipelines/` & `decision_pipeline/` directories we used Python 3.11.6. You may install the dependencies as follows: 
+for running the examples `binary_classfication_pipelines/` & `shortest_path_pipelines/` directories we used Python 3.11.6. You may install the dependencies as follows: 
 
 ```
 git clone --branch MPC https://github.com/khalil-research/PyEPO.git
@@ -25,7 +25,7 @@ pip install PyEPO/pkg/.
 
 pip install -r requirements.txt
 ```
-Note that running decision_pipeline example requires a Gurobi license. Consult [Gurobi website](https://www.gurobi.com/) to aquire aquire and install your license on your machine. 
+Note that running shortest path example requires a Gurobi license. Consult [Gurobi website](https://www.gurobi.com/) to acquire and install your license on your machine. 
 
 For running the example in "auto-sklearn" directory we used Python 3.8.18. You may install the library "Auto-Sklearn" as follows:
 
@@ -35,29 +35,29 @@ pip install auto-sklearn==0.15.0
 If you are having problems with downloading Auto-Sklearn, please consult their [Github-Repository](https://github.com/automl/auto-sklearn)
 
 
-## Running the decision pipelines example
+## Running the shortest path example
 <p align="center"><img width="65%" src="images/shortest_path_decision_pipeline_template.png" /></p>
 
 ````
-cd decision_pipelines
+cd shortest_path_pipelines
 python main.py
 python gather_scores_and_plot.py
 ````
 ### Pipelines outputs and regret comparison graph.
-Once completed, you may find the results of all runs under `decision_pipelines/results/` directory.
+Once completed, you may find the results of all runs under `shortest_path_pipelines/results/` directory.
 
-The `decision_pipelines/scores_and_plots/` directory clear
+The `shortest_path_pipelines/scores_and_plots/` directory clear
 contains all scores and regret comparison graph. 
 
 
 
-## Running the automl pipelines example
+## Running the binary classification example
 
 <p align="center"><img width="65%" src="images/binary_clf_pipeline_template.png" /></p>
 
-To run the automl example, use the following commands: 
+To run this example, use the following commands: 
 ````
-cd automl_pipelines
+cd binary_classfication_pipelines
 python main.py
 ````
 
@@ -65,7 +65,7 @@ IMPORTANT: The resulting pipelines are designed to handle only binary-classifica
 
 
 ### Pipeline outputs and dataset splitting
-Once completed, you can find the outputs of all pipelines in the `automl_pipelines/results/` directory.
+Once completed, you can find the outputs of all pipelines in the `binary_classfication_pipelines/results/` directory.
 
 Sub-directories **without** "incumbent" in the name contain the outputs of the train phase, with all pipelines: 
 
@@ -95,22 +95,22 @@ Note that that datasets are downloaded from openml and split as follows:
 In the `/test_phase` directory, the training data comprises the entirety of the data in `/train_phase` directory. 
 
 ### Run history
-You can find the run history of all runs in the `automl_pipelines/run_histories/` directory. 
+You can find the run history of all runs in the `binary_classfication_pipelines/run_histories/` directory. 
 
 ### Logs
-You can find the logs of all runs in the `automl_pipelines/logs/` directory.
+You can find the logs of all runs in the `binary_classfication_pipelines/logs/` directory.
 
 The `luigi-root.log` file contains the warnings that occurred during all runs. Note that the `luigi-interface.log` file may be too big to open, as it contains all the outputs during all runs. 
 
 ## Running Auto-Sklearn example
 
-This example should be only run after running the example in `/automl_pipelines`. 
+This example should be only run after running the example in `/binary_classfication_pipelines`. 
 ````
 cd askl
 python main.py
 ````
 
-After this completes, you get a comparison table between AutoSklearn results and the results from the `/automl_pipelines` by running:
+After this completes, you get a comparison table between AutoSklearn results and the results from the `/binary_classfication_pipelines` by running:
 
 ````
 python askl_luigi_comparison.csv.py
@@ -119,7 +119,7 @@ This will produce the following csv file `cls-luigi_paper/askl/askl_cls_luigi_co
 
 ## Time and run savings
 
-Checkout th Jupyter Notebook `automl_pipelines/time_and_runs_analysis.ipynb` to see our how we calculated time and run saving using Luigi's caching mechanism.  
+Checkout th Jupyter Notebook `binary_classfication_pipelines/time_and_runs_analysis.ipynb` to see our how we calculated time and run saving using Luigi's caching mechanism.  
 
 ## Experiment Hardware
 
