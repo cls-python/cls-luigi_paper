@@ -24,9 +24,9 @@ class SKLSelectFromExtraTrees(FeaturePreprocessor):
                     min_weight_fraction_leaf=0.0,
                     min_impurity_decrease=0.0,
                     bootstrap=False,
-                    random_state=self.global_params.seed,
+                    random_state=self.global_params["seed"],
                     oob_score=False,
-                    n_jobs=self.global_params.n_jobs,
+                    n_jobs=self.global_params["n_jobs"],
                     verbose=0
                 )
 

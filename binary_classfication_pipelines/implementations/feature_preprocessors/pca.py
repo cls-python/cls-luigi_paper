@@ -14,7 +14,7 @@ class SKLPCA(FeaturePreprocessor):
                     n_components=0.9999,
                     whiten=False,
                     copy=True,
-                    random_state=self.global_params.seed,
+                    random_state=self.global_params["seed"],
                 )
 
                 self.fit_transform_feature_preprocessor(x_and_y_required=False)

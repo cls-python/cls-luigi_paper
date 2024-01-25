@@ -21,7 +21,7 @@ class SKLLinearSVC(Classifier):
                     multi_class="ovr",
                     fit_intercept=True,
                     intercept_scaling=1,
-                    random_state=self.global_params.seed
+                    random_state=self.global_params["seed"]
                 )
 
                 self.fit_predict_estimator()

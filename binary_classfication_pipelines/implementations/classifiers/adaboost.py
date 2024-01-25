@@ -17,14 +17,14 @@ class SKLAdaBoost(Classifier):
                 self._read_split_original_target_values()
                 self._read_split_processed_features()
 
-                base_estimator = DecisionTreeClassifier(max_depth=1, random_state=self.global_params.seed)
+                base_estimator = DecisionTreeClassifier(max_depth=1, random_state=self.global_params["seed"])
 
                 self.estimator = AdaBoostClassifier(
                     estimator=base_estimator,
                     n_estimators=50,
                     learning_rate=1.0,
                     algorithm="SAMME.R",
-                    random_state=self.global_params.seed
+                    random_state=self.global_params["seed"]
                 )
 
                 self.fit_predict_estimator()

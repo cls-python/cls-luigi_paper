@@ -13,6 +13,7 @@ from .global_parameters import GlobalParameters
 
 class AutoMLTaskBase(luigi.Task, LuigiCombinator):
     worker_timeout = 100
+    global_params = luigi.DictParameter(default = {})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -20,7 +21,7 @@ class AutoMLTaskBase(luigi.Task, LuigiCombinator):
         if not exists("logs"):
             makedirs("logs")
 
-        self.global_params = GlobalParameters()
+        # self.
 
     @staticmethod
     def makedirs_in_not_exist(path: str) -> None:
@@ -33,7 +34,7 @@ class AutoMLTaskBase(luigi.Task, LuigiCombinator):
                                     ) -> str:
 
         if dataset_name is None:
-            dataset_name = self.global_params.dataset_name
+            dataset_name = self.global_params["dataset_name"]
 
         dataset_name = self._check_if_int_and_cast_to_str(dataset_name)
         dataset_outputs_folder = pjoin(output_folder, dataset_name)
@@ -55,7 +56,7 @@ class AutoMLTaskBase(luigi.Task, LuigiCombinator):
                                                ) -> luigi.LocalTarget:
 
         if dataset_name is None:
-            dataset_name = self.global_params.dataset_name
+            dataset_name = self.global_params["dataset_name"]
 
         dataset_name = self._check_if_int_and_cast_to_str(dataset_name)
 
@@ -140,7 +141,6 @@ class AutoMLTaskBase(luigi.Task, LuigiCombinator):
 
 
 
-
 class TaskTimeOutHandler(object):
     @luigi.Task.event_handler(luigi.Event.TIMEOUT)
     def on_timeout(self, *args):
@@ -153,5 +153,3 @@ class TaskTimeOutHandler(object):
         }
         with open(f"{dataset_outputs_folder}/{self.task_id}_TIMEOUT.json", "w") as f:
             json.dump(timeout_report, f, indent=4)
-
-

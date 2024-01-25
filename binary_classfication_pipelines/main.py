@@ -81,11 +81,11 @@ def generate_and_filter_pipelines():
     validator = UniqueTaskPipelineValidator(
         [LoadSplitData, NumericalImputer, Scaler, FeaturePreprocessor,
          Classifier])
-    pipelines = [t() for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
+    pipelines = [t for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
 
     print("Filtering using NotForbiddenValidator...")
     automl_validator = NotForbiddenValidator()
-    pipelines = [t for t in pipelines if automl_validator.validate(t)]
+    pipelines = [t for t in pipelines if automl_validator.validate(t())]
     print("Generated {} pipelines".format(max_results))
     print("Number of pipelines after filtering:", len(pipelines))
     return pipelines
@@ -100,15 +100,20 @@ def set_global_parameters(x_train, x_test, y_train, y_test, ds_name, seed) -> No
     global_parameters.dataset_name = ds_name
     global_parameters.seed = seed
 
+    return global_parameters
+
 
 def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout=100):
-    set_global_parameters(
-        paths["train_phase"]["x_train_path"],
-        paths["train_phase"]["x_valid_path"],
-        paths["train_phase"]["y_train_path"],
-        paths["train_phase"]["y_valid_path"],
-        ds_name,
-        seed)
+
+    global_params = {
+        "dataset_name": ds_name,
+        "seed": seed,
+        "n_jobs": 1,
+        "x_train_path": paths["train_phase"]["x_train_path"],
+        "x_test_path": paths["train_phase"]["x_valid_path"],
+        "y_train_path": paths["train_phase"]["y_train_path"],
+        "y_test_path": paths["train_phase"]["y_valid_path"]
+    }
 
     print(f"Running training phase (all pipelines) for dataset {ds_name} using the training and validation datasets...")
     with TimeRecorder(f"logs/{ds_name}_time.json"):
@@ -116,7 +121,7 @@ def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout=100):
             for pipeline in tqdm(pipelines):
                 # pipeline.set_worker_timeout_for_all_tasks(worker_timeout=worker_timeout)  # 100 seconds by default
                 luigi.build(
-                    [pipeline],
+                    [pipeline(global_params=global_params)],
                     local_scheduler=False,
                     logging_conf_file="logging.conf",
                     detailed_summary=True,
@@ -172,18 +177,18 @@ def main(pipelines, seed, metric):
 
         run_train_phase(paths, pipelines, ds_name, seed)
 
-        run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric=metric)
-        print("Generated and saved training run history for dataset:", ds_name)
-        print(train_summary_stats_str(run_history_df))
-        save_train_summary(ds_name, run_history_df)
-
-        best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
-        best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
-        run_test_phase(paths, best_pipeline, ds_name, seed)
-
-        print(test_summary_stats_str(ds_name))
-        print("=============================================================================================\n\n")
-        save_test_scores_and_pipelines_for_all_datasets(metric=metric)
+        # run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric=metric)
+        # print("Generated and saved training run history for dataset:", ds_name)
+        # print(train_summary_stats_str(run_history_df))
+        # save_train_summary(ds_name, run_history_df)
+        #
+        # best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
+        # best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
+        # run_test_phase(paths, best_pipeline, ds_name, seed)
+        #
+        # print(test_summary_stats_str(ds_name))
+        # print("=============================================================================================\n\n")
+        # save_test_scores_and_pipelines_for_all_datasets(metric=metric)
     else:
         print("No results!")
 

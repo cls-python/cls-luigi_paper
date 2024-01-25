@@ -19,8 +19,8 @@ class SKLRandomTreesEmbedding(FeaturePreprocessor):
                     min_samples_leaf=1,
                     min_weight_fraction_leaf=0,  # TODO: check
                     max_leaf_nodes=None,
-                    n_jobs=self.global_params.n_jobs,
-                    random_state=self.global_params.seed,
+                    n_jobs=self.global_params["n_jobs"],
+                    random_state=self.global_params["seed"],
                     sparse_output=False
                 )
 

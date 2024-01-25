@@ -26,7 +26,7 @@ class SKLGradientBoosting(Classifier):
                     scoring="loss",
                     n_iter_no_change=10,
                     validation_fraction=0.1,
-                    random_state=self.global_params.seed,
+                    random_state=self.global_params["seed"],
                     warm_start=True
                 )
 

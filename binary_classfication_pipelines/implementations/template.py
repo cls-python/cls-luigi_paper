@@ -44,7 +44,7 @@ class NumericalImputer(ScalerOrAndImputer):
     x_test = None
 
     def requires(self):
-        return {"original_features_and_target": self.original_features_and_target()}
+        return {"original_features_and_target": self.original_features_and_target(global_params=self.global_params)}
 
     def _read_split_features(self):
         self.x_train = pd.read_pickle(self.input()["original_features_and_target"]["x_train"].path)
@@ -89,7 +89,7 @@ class Scaler(ScalerOrAndImputer):
     x_test = None
 
     def requires(self):
-        return {"imputed_features": self.imputed_features()}
+        return {"imputed_features": self.imputed_features(global_params=self.global_params)}
 
     def _read_split_imputed_features(self):
         self.x_train = pd.read_pickle(self.input()["imputed_features"]["x_train"].path)
@@ -137,8 +137,8 @@ class FeaturePreprocessor(DataPreprocessor):
 
     def requires(self):
         return {
-            "processed_features": self.numerically_processed_features(),
-            "original_features_and_target": self.original_features_and_target()
+            "processed_features": self.numerically_processed_features(global_params=self.global_params),
+            "original_features_and_target": self.original_features_and_target(global_params=self.global_params)
         }
 
     def output(self):
@@ -211,8 +211,8 @@ class Classifier(AutoMLTaskBase):
 
     def requires(self):
         return {
-            "processed_features": self.processed_features(),
-            "original_features_and_targets": self.original_features_and_targets()
+            "processed_features": self.processed_features(global_params=self.global_params),
+            "original_features_and_targets": self.original_features_and_targets(global_params=self.global_params)
         }
 
     def output(self):

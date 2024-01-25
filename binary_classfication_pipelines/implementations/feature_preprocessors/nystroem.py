@@ -18,7 +18,7 @@ class SKLNystroem(FeaturePreprocessor):
                     coef0=0,
                     degree=3,
                     n_components=100,
-                    random_state=self.global_params.seed
+                    random_state=self.global_params["seed"]
 
                 )
 

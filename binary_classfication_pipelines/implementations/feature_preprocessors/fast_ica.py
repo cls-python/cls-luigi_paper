@@ -16,7 +16,7 @@ class SKLFastICA(FeaturePreprocessor):
                     algorithm="parallel",
                     whiten=False,
                     fun="logcosh",
-                    random_state=self.global_params.seed
+                    random_state=self.global_params["seed"]
                 )
 
                 self.fit_transform_feature_preprocessor(x_and_y_required=False)

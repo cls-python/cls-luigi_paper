@@ -28,7 +28,7 @@ class SKLDecisionTree(Classifier):
                     max_features=1.0,
                     max_leaf_nodes=None,
                     min_impurity_decrease=0.0,
-                    random_state=self.global_params.seed,
+                    random_state=self.global_params["seed"],
                 )
 
                 self.fit_predict_estimator()

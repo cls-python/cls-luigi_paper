@@ -21,7 +21,7 @@ class SKLKernelPCA(FeaturePreprocessor):
                     degree=3,
                     coef0=0,
                     remove_zero_eig=True,
-                    random_state=self.global_params.seed,
+                    random_state=self.global_params["seed"],
                 )
                 self.fit_transform_feature_preprocessor(x_and_y_required=False)
                 self.sava_outputs()

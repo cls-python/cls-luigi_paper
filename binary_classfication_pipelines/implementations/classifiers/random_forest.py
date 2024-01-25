@@ -27,7 +27,7 @@ class SKLRandomForest(Classifier):
                     max_leaf_nodes=None,
                     min_impurity_decrease=0.0,
                     bootstrap=True,
-                    random_state=self.global_params.seed,
+                    random_state=self.global_params["seed"],
                 )
 
                 self.fit_predict_estimator()

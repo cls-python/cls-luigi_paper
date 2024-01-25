@@ -22,7 +22,7 @@ class SKLSelectFromLinearSVC(FeaturePreprocessor):
                     multi_class="ovr",
                     fit_intercept=True,
                     intercept_scaling=1,
-                    random_state=self.global_params.seed
+                    random_state=self.global_params["seed"]
                 )
                 estimator.fit(self.x_train, self.y_train)
                 self.feature_preprocessor = SelectFromModel(

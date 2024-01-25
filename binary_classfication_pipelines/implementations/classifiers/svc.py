@@ -21,7 +21,7 @@ class SKLKernelSVC(Classifier):
                     shrinking=True,
                     tol=1e-3,
                     max_iter=-1,
-                    random_state=self.global_params.seed,
+                    random_state=self.global_params["seed"],
                     class_weight=None,
                 )
 

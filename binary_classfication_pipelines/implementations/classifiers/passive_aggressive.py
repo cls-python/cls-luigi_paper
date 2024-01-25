@@ -19,7 +19,7 @@ class SKLPassiveAggressive(Classifier):
                     tol=1e-4,
                     average=False,
                     shuffle=True,
-                    random_state=self.global_params.seed,
+                    random_state=self.global_params["seed"],
                     warm_start=True
                 )
 

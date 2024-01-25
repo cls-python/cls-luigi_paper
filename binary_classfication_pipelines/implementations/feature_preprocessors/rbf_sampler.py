@@ -15,7 +15,7 @@ class SKLRBFSampler(FeaturePreprocessor):
                 self.feature_preprocessor = RBFSampler(
                     gamma=1.0,
                     n_components=100,
-                    random_state=self.global_params.seed
+                    random_state=self.global_params["seed"]
                 )
                 self.fit_transform_feature_preprocessor(x_and_y_required=False)
                 self.sava_outputs()

@@ -13,7 +13,7 @@ class SKLQuantileTransformer(Scaler):
                     copy=False,
                     n_quantiles=1000,
                     output_distribution="uniform",
-                    random_state=self.global_params.seed
+                    random_state=self.global_params["seed"]
                 )
                 self._read_split_imputed_features()
                 self.fit_transform_scaler()
