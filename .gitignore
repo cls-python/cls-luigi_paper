@@ -160,12 +160,13 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
-/askl/results
-/decision_pipelines/results/
-/decision_pipelines/scores_and_plots/
+
+
+
 /venvs/
-/automl_pipelines/logs/
-/automl_pipelines/results/
-/automl_pipelines/datasets/
-/automl_pipelines/run_histories/
+
 /PyEPO/
+/binary_classfication_pipelines/results/
+/binary_classfication_pipelines/logs/
+/binary_classfication_pipelines/datasets/
+/binary_classfication_pipelines/run_histories/
