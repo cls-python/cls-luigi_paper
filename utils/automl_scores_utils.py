@@ -120,20 +120,38 @@ def save_train_summary(dataset, run_history, metric="accuracy", out_path="logs")
     dump_json(summary, path)
 
 
-def test_summary_stats_str(ds_name, results_dir=RESULTS_PATH):
+def test_summary_stats_str(ds_name, metric="accuracy", results_dir=RESULTS_PATH):
     stats_string = "\n========== Testing Stats ==========\n"
     inc_dir = pjoin(results_dir, ds_name + "_incumbent")
 
-    for file in listdir(inc_dir):
-        if file.endswith("json") and "run_summary" in file:
-            result_json = load_json(pjoin(inc_dir, file))
-            stats_string += f"Train accuracy: {result_json['accuracy']['train']:.2f}\n"
-            stats_string += f"Test accuracy: {result_json['accuracy']['test']:.2f}\n"
+    run_summary = [file for file in listdir(inc_dir) if file.endswith("run_summary.json")]
+    assert len(run_summary) == 1, f"There exists more than one run_summary in the incumbet folder of {ds_name}"
+    run_summary = run_summary[0]
+    run_summary = load_json(pjoin(inc_dir, run_summary))
 
-            # stats_string += f"Train balanced accuracy: {result_json['balanced_accuracy']['train']:.2f}\n"
-            # stats_string += f"Test balanced accuracy: {result_json['balanced_accuracy']['test']:.2f}\n"
+    stats_string += f"Train {metric}: {run_summary[metric]['train']:.2f}\n"
+    stats_string += f"Test {metric}]: {run_summary[metric]['test']:.2f}\n"
 
-            return stats_string
+    return stats_string
+
+
+def save_test_summary(ds_name, metric="accuracy", out_path="logs", results_dir=RESULTS_PATH):
+    inc_dir = pjoin(results_dir, ds_name + "_incumbent")
+
+    run_summary = [file for file in listdir(inc_dir) if file.endswith("run_summary.json")]
+    assert len(run_summary) == 1, f"There exists more than one run_summary in the incumbet folder of {ds_name}"
+    run_summary = run_summary[0]
+    run_summary = load_json(pjoin(inc_dir, run_summary))
+
+    summary = {
+        "pipeline": run_summary["pipeline"],
+        f"train_{metric}": run_summary[metric]["train"],
+        f"test_{metric}": run_summary[metric]["test"]
+    }
+    path = pjoin(out_path, f"{ds_name}_test_summary.json")
+    dump_json(summary, path)
+
+
 
 
 def save_test_scores_and_pipelines_for_all_datasets(results_dir=RESULTS_PATH, metric="accuracy",
@@ -142,8 +160,8 @@ def save_test_scores_and_pipelines_for_all_datasets(results_dir=RESULTS_PATH, me
     for _dir in listdir(results_dir):
         if "_incumbent" in _dir:
             ds = _dir[:-10]
-        # for ds in datasets:
-        #     if f"{ds}_incumbent" in _dir:
+            # for ds in datasets:
+            #     if f"{ds}_incumbent" in _dir:
             inc_dir = pjoin(results_dir, _dir)
             for file in listdir(inc_dir):
                 if file.endswith("_run_summary.json"):

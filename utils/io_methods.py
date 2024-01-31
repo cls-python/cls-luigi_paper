@@ -9,10 +9,8 @@ def load_json(path, mode="r"):
 
 def dump_json(obj, path, mode="w"):
     with open(path, mode) as f:
-        try:
-            json.dump(obj, f, indent=4)
-        except AttributeError:
-            print()
+        json.dump(obj, f, indent=4)
+
 
 
 def load_pickle(path, mode="rb"):

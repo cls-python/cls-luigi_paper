@@ -266,20 +266,20 @@ class Classifier(AutoMLTaskBase):
         }
 
     def create_run_summary(self):
-        upstream_tasks = self._get_upstream_tasks()
+        pipeline_tasks = self._get_pipeline_list()
 
         self.run_summary["pipeline"] = {}
 
-        imputer = list(filter(lambda task: isinstance(task, NumericalImputer), upstream_tasks))
+        imputer = list(filter(lambda task: isinstance(task, NumericalImputer), pipeline_tasks))
         self._add_component_to_run_summary("imputer", imputer)
 
-        scaler = list(filter(lambda task: isinstance(task, Scaler), upstream_tasks))
+        scaler = list(filter(lambda task: isinstance(task, Scaler), pipeline_tasks))
         self._add_component_to_run_summary("scaler", scaler)
 
-        feature_preprocessor = list(filter(lambda task: isinstance(task, FeaturePreprocessor), upstream_tasks))
+        feature_preprocessor = list(filter(lambda task: isinstance(task, FeaturePreprocessor), pipeline_tasks))
         self._add_component_to_run_summary("feature_preprocessor", feature_preprocessor)
 
-        classifier = list(filter(lambda task: isinstance(task, Classifier), upstream_tasks))
+        classifier = list(filter(lambda task: isinstance(task, Classifier), pipeline_tasks))
         self._add_component_to_run_summary("classifier", classifier)
 
         self.compute_accuracy()
