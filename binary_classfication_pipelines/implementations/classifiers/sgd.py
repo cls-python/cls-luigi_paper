@@ -24,6 +24,7 @@ class SKLSGD(Classifier):
                     eta0=0.01,
                     power_t=0.5,
                     average=False,
+                    random_state=self.global_params.seed
                 )
 
                 self.fit_predict_estimator()
