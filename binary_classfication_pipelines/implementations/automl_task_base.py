@@ -103,7 +103,7 @@ class AutoMLTaskBase(luigi.Task, LuigiCombinator):
             t.worker_timeout = worker_timeout
 
     @luigi.Task.event_handler(luigi.Event.TIMEOUT)
-    def on_timeout(self, *args):
+    def handle_timeout_task(self, *args):
         self.logger.warning("TIMEOUT handler for task: {}".format(self.task_id))
 
         try:
@@ -130,7 +130,7 @@ class AutoMLTaskBase(luigi.Task, LuigiCombinator):
             self.logger.warning(e)
 
     @luigi.Task.event_handler(luigi.Event.FAILURE)
-    def on_failure(self, *args):
+    def handle_failed_task(self, *args):
         self.logger.warning("FAILURE handler for task: {}".format(self.task_id))
 
         try:

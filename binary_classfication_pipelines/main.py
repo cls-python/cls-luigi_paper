@@ -75,7 +75,7 @@ def set_global_parameters(x_train, x_test, y_train, y_test, ds_name, seed) -> No
     global_parameters.seed = seed
 
 
-def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout=100):
+def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout):
     set_global_parameters(
         paths["train_phase"]["x_train_path"],
         paths["train_phase"]["x_valid_path"],
@@ -105,7 +105,7 @@ def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout=100):
         "*" * 150))
 
 
-def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout=None):
+def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout):
     set_global_parameters(
         paths["test_phase"]["x_train_path"],
         paths["test_phase"]["x_test_path"],
@@ -122,7 +122,7 @@ def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout=None):
                 [best_pipeline],
                 local_scheduler=False,
                 detailed_summary=True,
-                workers=1
+                # workers=1
             )
     loggers[1].warning("\n{}\n{} This was dataset: {} {} testing phase\n{}\n".format(
         "*" * 150,
@@ -169,20 +169,20 @@ if __name__ == "__main__":
         9967,  # steel-plates-fault
         9957,  # qsar-biodeg
         9952,  # phoneme
-        # 9978,  # ozone-level-8hr
-        # 146820,  # wilt
-        # 3899,  # mozilla4
-        # 9983,  # eeg-eye-state
-        # 359962,  # kc1 classification
-        # 359958,  # pc4 classification
-        # 361066,  # bank-marketing classification
-        # 359972,  # sylvin classification
-        # 9976,  # Madelon
+        9978,  # ozone-level-8hr
+        146820,  # wilt
+        3899,  # mozilla4
+        9983,  # eeg-eye-state
+        359962,  # kc1 classification
+        359958,  # pc4 classification
+        361066,  # bank-marketing classification
+        359972,  # sylvin classification
+        9976,  # Madelon
 
-        # 167120,  # numerai28.6
-        # 146606,  # higgs
-        # 168868,  # APSFailure
-        # 168338,  # riccardo
+        167120,  # numerai28.6
+        146606,  # higgs
+        168868,  # APSFailure
+        168338,  # riccardo
 
     ]
 
@@ -190,5 +190,5 @@ if __name__ == "__main__":
     pipelines = generate_and_filter_pipelines()
 
     for ds_id in datasets_ids:
-        main(pipelines, seed, metric, train_worker_timeout=1, test_worker_timeout=1)
+        main(pipelines, seed, metric, train_worker_timeout=100, test_worker_timeout=None)
 
