@@ -28,7 +28,7 @@ from utils.luigi_daemon import LuigiDaemon
 from utils.time_recorder import TimeRecorder
 
 from utils.automl_scores_utils import generate_and_save_run_history, train_summary_stats_str, test_summary_stats_str, \
-    save_train_summary, save_test_scores_and_pipelines_for_all_datasets, save_test_summary
+    save_train_summary, save_test_summary
 
 loggers = [logging.getLogger("luigi-root"), logging.getLogger("luigi-interface")]
 
@@ -75,7 +75,20 @@ def set_global_parameters(x_train, x_test, y_train, y_test, ds_name, seed) -> No
     global_parameters.seed = seed
 
 
-def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout):
+def set_luigi_worker_configs(keep_alive=False, timeout_sec=None, max_keep_alive_idle_sec=None):
+    luigi.configuration.get_config().remove_section("worker")
+
+    if keep_alive is True:
+        luigi.configuration.get_config().set('worker', 'keep-alive', str(keep_alive))
+
+    if timeout_sec:
+        luigi.configuration.get_config().set('worker', 'timeout', str(timeout_sec))
+
+    if max_keep_alive_idle_sec:
+        luigi.configuration.get_config().set('worker', 'max_keep_alive_idle_duration', str(max_keep_alive_idle_sec))
+
+
+def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout, workers=1):
     set_global_parameters(
         paths["train_phase"]["x_train_path"],
         paths["train_phase"]["x_valid_path"],
@@ -86,15 +99,15 @@ def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout):
 
     print(f"Running training phase (all pipelines) for dataset {ds_name} using the training and validation datasets...")
     with TimeRecorder(f"logs/{ds_name}_train_time.json"):
+        set_luigi_worker_configs(keep_alive=True, timeout_sec=worker_timeout, max_keep_alive_idle_sec=5)
         with LuigiDaemon():
             for pipeline in tqdm(pipelines):
-                pipeline.set_worker_timeout_for_all_tasks(worker_timeout=worker_timeout)  # 100 seconds by default
                 luigi.build(
                     [pipeline],
                     local_scheduler=False,
                     logging_conf_file="logging.conf",
                     detailed_summary=True,
-                    workers=1
+                    workers=workers
                 )
 
     loggers[1].warning("\n{}\n{} This was dataset: {} {} training phase\n{}\n".format(
@@ -105,7 +118,7 @@ def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout):
         "*" * 150))
 
 
-def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout):
+def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout, workers=1):
     set_global_parameters(
         paths["test_phase"]["x_train_path"],
         paths["test_phase"]["x_test_path"],
@@ -116,13 +129,13 @@ def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout):
 
     print(f"Running testing phase (best pipeline) for dataset {ds_name} using the training and testing datasets...")
     with TimeRecorder(f"logs/{ds_name}_test_time.json"):
-        best_pipeline.set_worker_timeout_for_all_tasks(worker_timeout=worker_timeout)
+        set_luigi_worker_configs(keep_alive=False, timeout_sec=worker_timeout, max_keep_alive_idle_sec=None)
         with LuigiDaemon():
             luigi.build(
                 [best_pipeline],
                 local_scheduler=False,
                 detailed_summary=True,
-                # workers=1
+                workers=workers
             )
     loggers[1].warning("\n{}\n{} This was dataset: {} {} testing phase\n{}\n".format(
         "*" * 150,
@@ -132,7 +145,7 @@ def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout):
         "*" * 150))
 
 
-def main(pipelines, seed, metric, train_worker_timeout=100, test_worker_timeout=None):
+def main(pipelines, seed, metric, train_worker_timeout=100, test_worker_timeout=None, workers=1):
     os.makedirs("logs/luigi_logs", exist_ok=True)
 
     if pipelines:
@@ -143,7 +156,7 @@ def main(pipelines, seed, metric, train_worker_timeout=100, test_worker_timeout=
         print(f"                    Training and Testing on dataset: {ds_name}")
         print("=============================================================================================")
 
-        run_train_phase(paths, pipelines, ds_name, seed, train_worker_timeout)
+        run_train_phase(paths, pipelines, ds_name, seed, train_worker_timeout, workers)
 
         run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric=metric)
         print("Generated and saved training run history for dataset:", ds_name)
@@ -152,7 +165,7 @@ def main(pipelines, seed, metric, train_worker_timeout=100, test_worker_timeout=
 
         best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
         best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
-        run_test_phase(paths, best_pipeline, ds_name, seed, test_worker_timeout)
+        run_test_phase(paths, best_pipeline, ds_name, seed, test_worker_timeout, workers)
 
         print(test_summary_stats_str(ds_name))
         save_test_summary(ds_name)
@@ -166,17 +179,17 @@ if __name__ == "__main__":
     seed = 42
     metric = "accuracy"
     datasets_ids = [
-        9967,  # steel-plates-fault
-        9957,  # qsar-biodeg
-        9952,  # phoneme
-        9978,  # ozone-level-8hr
-        146820,  # wilt
-        3899,  # mozilla4
-        9983,  # eeg-eye-state
-        359962,  # kc1 classification
-        359958,  # pc4 classification
-        361066,  # bank-marketing classification
-        359972,  # sylvin classification
+        # 9967,  # steel-plates-fault
+        # 9957,  # qsar-biodeg
+        # 9952,  # phoneme
+        # 9978,  # ozone-level-8hr
+        # 146820,  # wilt
+        # 3899,  # mozilla4
+        # 9983,  # eeg-eye-state
+        # 359962,  # kc1 classification
+        # 359958,  # pc4 classification
+        # 361066,  # bank-marketing classification
+        # 359972,  # sylvin classification
         9976,  # Madelon
 
         167120,  # numerai28.6
@@ -190,5 +203,4 @@ if __name__ == "__main__":
     pipelines = generate_and_filter_pipelines()
 
     for ds_id in datasets_ids:
-        main(pipelines, seed, metric, train_worker_timeout=100, test_worker_timeout=None)
-
+        main(pipelines, seed, metric, train_worker_timeout=100, test_worker_timeout=None, workers=1)

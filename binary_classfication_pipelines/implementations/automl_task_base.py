@@ -14,7 +14,6 @@ from .global_parameters import GlobalParameters
 
 
 class AutoMLTaskBase(luigi.Task, LuigiCombinator):
-    worker_timeout = 100
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -97,10 +96,10 @@ class AutoMLTaskBase(luigi.Task, LuigiCombinator):
         collect_pipeline(self)
         return pipeline
 
-    def set_worker_timeout_for_all_tasks(self, worker_timeout):
-        pipeline_tasks = self._get_pipeline_list()
-        for t in pipeline_tasks:
-            t.worker_timeout = worker_timeout
+    # def set_worker_timeout_for_all_tasks(self, worker_timeout):
+    #     pipeline_tasks = self._get_pipeline_list()
+    #     for t in pipeline_tasks:
+    #         t.worker_timeout = worker_timeout
 
     @luigi.Task.event_handler(luigi.Event.TIMEOUT)
     def handle_timeout_task(self, *args):
