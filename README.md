@@ -135,5 +135,7 @@ All experiments were run on a machine with the following specifications:
 And were also tested on Ubuntu 22.04 as well as Pop_OS!. 
 
 ## Running on Windows and MacOS
-The experiments in this repository are yet to be tested on Windows and MacOS operating systems. 
+The examples in this repository do not run on macOS or Windows machines due to the `Multiprocessing` start method being Spawn on these operating systems. Even when only 1 worker is used (which is the default setting), the examples will still fail. This failure occurs because a limit for the worker timeout is set, necessitating the use of multiprocessing by design. Also, we use a `luigi.Config` class to update the global parameters of pipelines (input data pathes, seed ...etc). This also causes a problem when spawning because the parent process's memory won't be present. 
+
+Note: There are some workarounds to get CLS-Luigi working on Windows and macOS. However, after testing, it became apparent that the performance on these platforms is significantly slower compared to Linux.
 
