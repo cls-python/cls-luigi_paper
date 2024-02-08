@@ -45,3 +45,4 @@ def import_pipeline_components() -> None:
     from implementations.classifiers.bernoulli_nb import SKLBernoulliNB
     from implementations.classifiers.passive_aggressive import SKLPassiveAggressive
     from implementations.classifiers.qda import SKLQuadraticDiscriminantAnalysis
+    from implementations.classifiers.mlp import SKLMultiLayerPerceptron

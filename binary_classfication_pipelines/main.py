@@ -30,6 +30,8 @@ from utils.time_recorder import TimeRecorder
 from utils.automl_scores_utils import generate_and_save_run_history, train_summary_stats_str, test_summary_stats_str, \
     save_train_summary, save_test_summary
 
+from utils.automl_scores_utils import save_test_scores_and_pipelines_for_all_datasets
+
 loggers = [logging.getLogger("luigi-root"), logging.getLogger("luigi-interface")]
 
 
@@ -179,23 +181,22 @@ if __name__ == "__main__":
     seed = 42
     metric = "accuracy"
     datasets_ids = [
-        # 9967,  # steel-plates-fault
-        # 9957,  # qsar-biodeg
-        # 9952,  # phoneme
-        # 9978,  # ozone-level-8hr
-        # 146820,  # wilt
-        # 3899,  # mozilla4
-        # 9983,  # eeg-eye-state
-        # 359962,  # kc1 classification
-        # 359958,  # pc4 classification
-        # 361066,  # bank-marketing classification
-        # 359972,  # sylvin classification
+        9967,  # steel-plates-fault
+        9957,  # qsar-biodeg
+        9952,  # phoneme
+        9978,  # ozone-level-8hr
+        146820,  # wilt
+        3899,  # mozilla4
+        9983,  # eeg-eye-state
+        359962,  # kc1 classification
+        359958,  # pc4 classification
+        361066,  # bank-marketing classification
+        359972,  # sylvin classification
         9976,  # Madelon
 
         167120,  # numerai28.6
         146606,  # higgs
-        168868,  # APSFailure
-        168338,  # riccardo
+        43,  #spambase
 
     ]
 
@@ -204,3 +205,5 @@ if __name__ == "__main__":
 
     for ds_id in datasets_ids:
         main(pipelines, seed, metric, train_worker_timeout=100, test_worker_timeout=None, workers=1)
+
+    save_test_scores_and_pipelines_for_all_datasets()
