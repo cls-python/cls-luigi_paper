@@ -88,8 +88,8 @@ def _get_openml_dataset(task_id):
 def _encode_classification_labels(y):
     classes = sorted(list(y.unique()))
     assert len(classes) == 2, "There exists more than two classes!"
-
-    if isinstance(classes[0], (int, float, str)) and isinstance(classes[1], (int, float, str)):
+    
+    if isinstance(classes[0], (int, float, str, np.int64)) and isinstance(classes[1], (int, float, str, np.int64)):
         y = y.map(lambda x: 0 if x == classes[0] else 1)
 
     elif isinstance(classes[0], (bool, np.bool_)) and isinstance(classes[1], (bool, np.bool_)):
