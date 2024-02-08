@@ -60,7 +60,13 @@ def legend_name(regressor):
         return "LGBM (LT)"
 
 
-def draw_comparison_boxplot(summaries_df, save_to_path="scores_and_plots", out_name="comparison_boxplot.png", show=True):
+def draw_comparison_boxplot(summaries_df, 
+                            save_to_path="scores_and_plots",
+                            out_name="comparison_boxplot",
+                            show=True, 
+                            title="",
+                            # title="Shortest Path Regret Comparison\n\n",
+                            suffix="pdf"):
     boxes, labels = [], []
 
     fig, axis = plt.subplots(3, 2, figsize=(26, 18))
@@ -140,12 +146,15 @@ def draw_comparison_boxplot(summaries_df, save_to_path="scores_and_plots", out_n
         axis[ix].axvline(x=.5, color="k", linestyle="--", linewidth=1.5)
         axis[ix].axvline(x=1.5, color="k", linestyle="--", linewidth=1.5)
         axis[ix].axvline(x=2.5, color="k", linestyle="--", linewidth=1.5)
+        
+    
+    if title:
 
-    plt.suptitle("Shortest Path Regret Comparison\n\n", fontsize=30)
+        plt.suptitle(title, fontsize=30)
     plt.tight_layout()
     if show:
         plt.show()
-    fig.savefig(pjoin(save_to_path, out_name), dpi=400)
+    fig.savefig(pjoin(save_to_path, out_name + "." + suffix), dpi=400)
 
 
 if __name__ == "__main__":
