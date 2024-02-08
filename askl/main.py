@@ -24,7 +24,7 @@ def load_split_dataset(ds_name):
 
 
 def get_task_seconds(ds_name, factor=1):
-    path = pjoin(ROOT, "binary_classfication_pipelines/logs/", f"{ds_name}_time.json")
+    path = pjoin(ROOT, "binary_classfication_pipelines/logs/", f"{ds_name}_train_time.json")
 
     return int(load_json(path)["total_seconds"] * factor)
 
@@ -102,11 +102,11 @@ if __name__ == "__main__":
     time_factor = 2
     
     datasets = [
+        # 'spambase', # exists in autosklearn
         # 'sylvine',
         # 'bank-marketing',
-        'kc1',
         # 'phoneme',
-
+        # 'kc1',  # exists in autosklearn
         # 'pc4', # exists in autosklearn
         # 'wilt', # exists in autosklearn
         # 'qsar-biodeg', # exists in autosklearn
@@ -114,12 +114,9 @@ if __name__ == "__main__":
         # 'steel-plates-fault', # exists in autosklearn
         # 'ozone-level-8hr', # exists in autosklearn
         # 'eeg-eye-state', # exists in autosklearn
-
-        # 'madelon',  # exists in autosklearn
-        # 'numerai28.6',
+        # 'madelon',
+        'numerai28.6',
         # 'higgs',
-        # 'APSFailure',
-        # 'riccardo'
     ]
     
     
