@@ -12,7 +12,6 @@ def dump_json(obj, path, mode="w"):
         json.dump(obj, f, indent=4)
 
 
-
 def load_pickle(path, mode="rb"):
     with open(path, mode) as f:
         pickle.load(f)
@@ -21,3 +20,8 @@ def load_pickle(path, mode="rb"):
 def dump_pickle(obj, path, mode="wb"):
     with open(path, mode) as f:
         pickle.dump(obj, f)
+
+
+def dump_txt(string, path, mode="w"):
+    with open(path, mode) as f:
+        f.write(string)
