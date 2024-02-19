@@ -31,11 +31,7 @@ class NumericalPreprocessor(DataPreprocessor):
     abstract = True
 
 
-class ScalerOrAndImputer(NumericalPreprocessor):
-    abstract = True
-
-
-class NumericalImputer(ScalerOrAndImputer):
+class NumericalImputer(NumericalPreprocessor):
     abstract = True
     original_features_and_target = ClsParameter(tpe=LoadSplitData.return_type())
 
@@ -80,7 +76,7 @@ class NumericalImputer(ScalerOrAndImputer):
             joblib.dump(self.imputer, outfile)
 
 
-class Scaler(ScalerOrAndImputer):
+class Scaler(NumericalPreprocessor):
     abstract = True
     imputed_features = ClsParameter(tpe=NumericalImputer.return_type())
 
@@ -242,14 +238,20 @@ class Classifier(AutoMLTaskBase):
 
     def fit_predict_estimator(self):
         with warnings.catch_warnings(record=True) as w:
+            self.logger.debug("Fitting the classifier...")
             self.estimator.fit(self.x_train, self.y_train)
             self.y_test_predict = pd.DataFrame(
                 columns=["y_predict"],
                 data=self.estimator.predict(self.x_test))
 
+            self.logger.debug("Classifier fitted")
+
+
             self.y_train_predict = pd.DataFrame(
                 columns=["y_predict"],
                 data=self.estimator.predict(self.x_train))
+            
+            self.logger.debug("prediction made")
 
             self._log_warnings(w)
 
