@@ -29,20 +29,27 @@ def import_pipeline_components() -> None:
     from implementations.feature_preprocessors.select_rates import SKLSelectRates
 
     # classifier
-    from implementations.classifiers.adaboost import SKLAdaBoost
+    from implementations.classifiers.mlp import SKLMultiLayerPerceptron
+
     from implementations.classifiers.decision_tree import SKLDecisionTree
     from implementations.classifiers.random_forest import SKLRandomForest
     from implementations.classifiers.extra_trees import SKLExtraTrees
     from implementations.classifiers.gradient_boosting import SKLGradientBoosting
+    from implementations.classifiers.adaboost import SKLAdaBoost
+
+    from implementations.classifiers.knn import SKLKNearestNeighbors
+
+
     from implementations.classifiers.sgd import SKLSGD
+
     from implementations.classifiers.svc import SKLKernelSVC
+    from implementations.classifiers.linear_svc import SKLLinearSVC
+
+    from implementations.classifiers.lda import SKLLinearDiscriminantAnalysis
+    from implementations.classifiers.qda import SKLQuadraticDiscriminantAnalysis
+    from implementations.classifiers.passive_aggressive import SKLPassiveAggressive
+
 
     from implementations.classifiers.multinominal_nb import SKLMultinomialNB
-    from implementations.classifiers.linear_svc import SKLLinearSVC
-    from implementations.classifiers.lda import SKLLinearDiscriminantAnalysis
-    from implementations.classifiers.knn import SKLKNearestNeighbors
     from implementations.classifiers.gaussian_nb import SKLGaussianNaiveBayes
     from implementations.classifiers.bernoulli_nb import SKLBernoulliNB
-    from implementations.classifiers.passive_aggressive import SKLPassiveAggressive
-    from implementations.classifiers.qda import SKLQuadraticDiscriminantAnalysis
-    from implementations.classifiers.mlp import SKLMultiLayerPerceptron
