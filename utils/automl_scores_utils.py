@@ -24,48 +24,50 @@ def generate_and_save_run_history(ds_name, results_dir=RESULTS_PATH, out_dir=OUT
 
     dataset_dir = pjoin(results_dir, ds_name)
     for file in listdir(dataset_dir):
+        
+        if "_incumbent" not in file:
 
-        if file.endswith("json"):
-            if "run_summary" in file or "FAILURE" in file or "TIMEOUT" in file:
+            if file.endswith("json"):
+                if "run_summary" in file or "FAILURE" in file or "TIMEOUT" in file:
 
-                result_json = load_json(pjoin(dataset_dir, file))
+                    result_json = load_json(pjoin(dataset_dir, file))
 
-                if "run_summary" in file:
-                    status.append("success")
-                    pipeline = result_json["pipeline"]
-                    imputer_col.append(pipeline["imputer"])
-                    scaler_col.append(pipeline["scaler"])
-                    feature_preprocessor_col.append(pipeline["feature_preprocessor"])
-                    classifier_col.append(pipeline["classifier"])
-                    train_accuracy.append(result_json["accuracy"]["train"])
-                    valid_accuracy.append(result_json["accuracy"]["test"])
-                    train_balanced_accuracy.append(result_json["balanced_accuracy"]["train"])
-                    valid_balanced_accuracy.append(result_json["balanced_accuracy"]["test"])
-                    last_task_col.append(result_json["last_task"])
+                    if "run_summary" in file:
+                        status.append("success")
+                        pipeline = result_json["pipeline"]
+                        imputer_col.append(pipeline["imputer"])
+                        scaler_col.append(pipeline["scaler"])
+                        feature_preprocessor_col.append(pipeline["feature_preprocessor"])
+                        classifier_col.append(pipeline["classifier"])
+                        train_accuracy.append(result_json["accuracy"]["train"])
+                        valid_accuracy.append(result_json["accuracy"]["test"])
+                        train_balanced_accuracy.append(result_json["balanced_accuracy"]["train"])
+                        valid_balanced_accuracy.append(result_json["balanced_accuracy"]["test"])
+                        last_task_col.append(result_json["last_task"])
 
-                elif "FAILURE" in file:
-                    last_task_col.append(result_json["task_id"])
-                    status.append("failed")
-                    imputer_col.append(None)
-                    scaler_col.append(None)
-                    feature_preprocessor_col.append(None)
-                    classifier_col.append(None)
-                    train_accuracy.append(None)
-                    valid_accuracy.append(None)
-                    train_balanced_accuracy.append(None)
-                    valid_balanced_accuracy.append(None)
+                    elif "FAILURE" in file:
+                        last_task_col.append(result_json["task_id"])
+                        status.append("failed")
+                        imputer_col.append(None)
+                        scaler_col.append(None)
+                        feature_preprocessor_col.append(None)
+                        classifier_col.append(None)
+                        train_accuracy.append(None)
+                        valid_accuracy.append(None)
+                        train_balanced_accuracy.append(None)
+                        valid_balanced_accuracy.append(None)
 
-                elif "TIMEOUT" in file:
-                    last_task_col.append(result_json["task_id"])
-                    status.append("timeout")
-                    imputer_col.append(None)
-                    scaler_col.append(None)
-                    feature_preprocessor_col.append(None)
-                    classifier_col.append(None)
-                    train_accuracy.append(None)
-                    valid_accuracy.append(None)
-                    train_balanced_accuracy.append(None)
-                    valid_balanced_accuracy.append(None)
+                    elif "TIMEOUT" in file:
+                        last_task_col.append(result_json["task_id"])
+                        status.append("timeout")
+                        imputer_col.append(None)
+                        scaler_col.append(None)
+                        feature_preprocessor_col.append(None)
+                        classifier_col.append(None)
+                        train_accuracy.append(None)
+                        valid_accuracy.append(None)
+                        train_balanced_accuracy.append(None)
+                        valid_balanced_accuracy.append(None)
 
     run_history_df = pd.DataFrame()
 
