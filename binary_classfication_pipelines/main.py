@@ -6,7 +6,7 @@ import logging
 import os
 
 # CLS-Luigi imports
-from cls_luigi.inhabitation_task import RepoMeta
+from cls_luigi.inhabitation_task import RepoMeta, CLSLuigiDecoder, CLSLugiEncoder
 
 from cls.fcl import FiniteCombinatoryLogic
 from cls.subtypes import Subtypes
@@ -30,7 +30,7 @@ from utils.automl_scores_utils import generate_and_save_run_history, train_summa
     save_train_summary, save_test_summary
 
 from utils.automl_scores_utils import save_test_scores_and_pipelines_for_all_datasets
-from utils.io_methods import dump_txt
+from utils.io_methods import dump_txt, load_json, dump_json
 
 loggers = [logging.getLogger("luigi-root"), logging.getLogger("luigi-interface")]
 
@@ -59,14 +59,43 @@ def generate_and_filter_pipelines():
     validator = UniqueTaskPipelineValidator(
         [LoadSplitData, NumericalImputer, Scaler, FeaturePreprocessor,
          Classifier])
-    pipelines = [t() for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
+    pipelines = [t for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
 
     print("Filtering using NotForbiddenValidator...")
     automl_validator = NotForbiddenValidator()
-    pipelines = [t for t in pipelines if automl_validator.validate(t)]
+    pipelines = [t for t in pipelines if automl_validator.validate(t())]
     print("Generated {} pipelines".format(max_results))
     print("Number of pipelines after filtering:", len(pipelines))
     return pipelines
+
+
+def get_and_save_pipelines(pipelines_dir="json_pipelines"):
+    if os.path.exists(pipelines_dir):
+        print("Pipelines already exist!")
+        pipelines = []
+        for p_path in os.listdir(pipelines_dir):
+            p = load_json(
+                path=os.path.join(pipelines_dir, p_path),
+                decoder_cls=CLSLuigiDecoder
+            )
+            pipelines.append(p)
+    else:
+        os.mkdir(pipelines_dir)
+        import_pipeline_components()
+        pipelines = generate_and_filter_pipelines()
+        for p in pipelines:
+            p_path = os.path.join(pipelines_dir, f"{p().task_id}.json")
+            dump_json(
+                obj=p,
+                path=p_path,
+                encoder_cls=CLSLugiEncoder)
+
+    pipelines = instantiate_pipelines(pipelines)
+    return pipelines
+
+
+def instantiate_pipelines(pipelines):
+    return [pipeline() for pipeline in pipelines]
 
 
 def set_global_parameters(x_train, x_test, y_train, y_test, ds_name, seed) -> None:
@@ -174,45 +203,72 @@ def main(pipelines, seed, metric, ds_id, train_worker_timeout=100, test_worker_t
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--seed",
+                        type=int,
+                        default=123,
+                        help="Seed for reproducibility")
+
+    parser.add_argument("--metric",
+                        type=str,
+                        default="accuracy",
+                        help="Metric for sorting the results")
+
+    parser.add_argument("--ds_id",
+                        type=int,
+                        help="OpenML dataset ID")
+
+    parser.add_argument("--train_worker_timeout",
+                        type=int,
+                        default=100,
+                        help="Luigi worker timeout for the training phase")
+
+    parser.add_argument("--test_worker_timeout",
+                        type=int,
+                        default=None,
+                        help="Luigi worker timeout for the testing phase")
+
+    parser.add_argument("--workers",
+                        type=int,
+                        default=1,
+                        help="Number of luigi workers")
+
+    config = parser.parse_args()
+
     seed = 123
     metric = "accuracy"
 
-    datasets_ids = [
-        9957,  # qsar-biodeg
-        359958,  # pc4 classification
-        9967,  # steel-plates-fault
-        359962,  # kc1 classification
-        9978,  # ozone-level-8hr
-        146820,  # wilt
-        43,  # spambase
+    # datasets_ids = [
+    #     9957,  # qsar-biodeg
+    #     359958,  # pc4 classification
+    #     9967,  # steel-plates-fault
+    #     359962,  # kc1 classification
+    #     9978,  # ozone-level-8hr
+    #     146820,  # wilt
+    #     43,  # spambase
+    #     359972,  # sylvin classification
+    #     9952,  # phoneme
+    #     361066,  # bank-marketing classification
+    #     9983,  # eeg-eye-state
+    #     3899,  # mozilla4
+    #     9976,  # madelon
+    #
+    #     146606,  # higgs
+    #     167120,  # numerai28.6
+    # ]
 
-        359972,  # sylvin classification
+    pipelines = get_and_save_pipelines()
 
-        9952,  # phoneme
-        361066,  # bank-marketing classification
-        9983,  # eeg-eye-state
-        3899,  # mozilla4
-        9976,  # madelon
-
-        146606,  # higgs
-        167120,  # numerai28.6
-
-    ]
-
-    os.mkdir("logs")
-    with TimeRecorder(f"logs/synthesis_time.json"):
-        import_pipeline_components()
-        pipelines = generate_and_filter_pipelines()
-
-    for ds_id in datasets_ids:
-        main(
-            pipelines=pipelines,
-            seed=seed,
-            metric=metric,
-            ds_id=ds_id,
-            train_worker_timeout=100,
-            test_worker_timeout=None,
-            workers=1)
+    main(
+        pipelines=pipelines,
+        seed=config.seed,
+        metric=config.metric,
+        ds_id=config.ds_id,
+        train_worker_timeout=config.train_worker_timeout,
+        test_worker_timeout=config.test_worker_timeout,
+        workers=config.workers)
 
     save_test_scores_and_pipelines_for_all_datasets()
-
