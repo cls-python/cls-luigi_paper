@@ -1,4 +1,6 @@
 import sys
+
+
 sys.path.append("..")
 
 from shortest_path_pipelines.shortest_path_template import*
@@ -12,6 +14,8 @@ from cls_luigi.unique_task_pipeline_validator import UniqueTaskPipelineValidator
 from global_parameters import GlobalParameters
 
 import utils.luigi_daemon
+from utils.time_recorder import TimeRecorder
+
 from shortest_path_pipelines.gather_scores_and_plot import collect_and_save_summaries, draw_comparison_boxplot
 
 
@@ -75,12 +79,14 @@ def main(pipelines, training_size, deg, noise, seed):
 
 if __name__ == "__main__":
     pipelines = generate_and_filter_pipelines()
+
+    with TimeRecorder("elapsed_time.json"):
     
-    for training_size in [100, 1000]: #, 5000]:
-        for deg in [1, 2]: #, 4, 6]:
-            for noise in [0, .5]:
-                for seed in [1, 2]: #, 3, 4, 5, 6, 7, 8, 9, 10]:
-                    main(pipelines, training_size, deg, noise, seed)
+        for training_size in [100, 1000, 5000]:
+            for deg in [1, 2, 4, 6]:
+                for noise in [0, .5]:
+                    for seed in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+                        main(pipelines, training_size, deg, noise, seed)
                     
                     
     summaries_df = collect_and_save_summaries()
