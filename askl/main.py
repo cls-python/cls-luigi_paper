@@ -102,21 +102,21 @@ if __name__ == "__main__":
     time_factor = 2
     
     datasets = [
-        # 'spambase', # exists in autosklearn
-        # 'sylvine',
-        # 'bank-marketing',
-        # 'phoneme',
-        # 'kc1',  # exists in autosklearn
-        # 'pc4', # exists in autosklearn
-        # 'wilt', # exists in autosklearn
-        # 'qsar-biodeg', # exists in autosklearn
-        # 'mozilla4', # exists in autosklearn
-        # 'steel-plates-fault', # exists in autosklearn
-        # 'ozone-level-8hr', # exists in autosklearn
-        # 'eeg-eye-state', # exists in autosklearn
-        # 'madelon',
+        'spambase', # exists in autosklearn
+        'sylvine',
+        'bank-marketing',
+        'phoneme',
+        'kc1',  # exists in autosklearn
+        'pc4', # exists in autosklearn
+        'wilt', # exists in autosklearn
+        'qsar-biodeg', # exists in autosklearn
+        'mozilla4', # exists in autosklearn
+        'steel-plates-fault', # exists in autosklearn
+        'ozone-level-8hr', # exists in autosklearn
+        'eeg-eye-state', # exists in autosklearn
+        'madelon',
         'numerai28.6',
-        # 'higgs',
+        'higgs',
     ]
     
     
