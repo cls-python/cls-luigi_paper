@@ -1,21 +1,12 @@
-from cls.fcl import FiniteCombinatoryLogic
-from cls.subtypes import Subtypes
-
-from cls_luigi.inhabitation_task import LuigiCombinator
-from cls_luigi.inhabitation_task import ClsParameter
-from cls_luigi.inhabitation_task import RepoMeta
+# *************************************************************************
+# Step 1: Define Loading Data Component
+# *************************************************************************
 
 import luigi
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from cls_luigi.inhabitation_task import LuigiCombinator
 import pandas as pd
 
-
-# Step 1: Download and save iris dataset
 class LoadIrisDataset(luigi.Task, LuigiCombinator):
-
-    def requires(self):
-        return None # no dependencies
 
     def output(self):
         return {
@@ -24,17 +15,21 @@ class LoadIrisDataset(luigi.Task, LuigiCombinator):
 
     def run(self):
         from sklearn.datasets import load_iris
-        # get data 
+
         iris = load_iris(as_frame=True)
         X = iris.data
         y = iris.target
-        #save data
+
         X.to_csv(self.output()["X"].path, index=False)
         y.to_csv(self.output()["y"].path, index=False)
-        
-        
-        
-# Step 2: Implement an abstract class for classifiers
+
+
+# *************************************************************************
+# Step 2 : Define Abstract Classifier Component
+# *************************************************************************
+
+from cls_luigi.inhabitation_task import ClsParameter
+
 class FitPredictClassifier(luigi.Task, LuigiCombinator):
     abstract = True # place holder
     iris = ClsParameter(tpe=LoadIrisDataset.return_type())
@@ -44,12 +39,10 @@ class FitPredictClassifier(luigi.Task, LuigiCombinator):
 
     def output(self):
         variant_label = self.task_id
-        return {
-        "y_pred": luigi.LocalTarget(
-            f"y_pred-{variant_label}.csv")}
+        return {"y_pred": luigi.LocalTarget(f"y_pred-{variant_label}.csv")}
 
     def run(self):
-        # load data from previous component 
+        # load data from previous component
         X = pd.read_csv(self.input()["X"].path)
         y = pd.read_csv(self.input()["y"].path)
 
@@ -58,58 +51,53 @@ class FitPredictClassifier(luigi.Task, LuigiCombinator):
         clf.fit(X, y)
 
         #predict and save predictions
-        y_pred = pd.DataFrame(
-            data=clf.predict(X),
-            columns=["y_pred"])
-
-        y_pred.to_csv(
-            self.output()["y_pred"].path, index=False)
+        y_pred = pd.DataFrame(data=clf.predict(X), columns=["y_pred"])
+        y_pred.to_csv(self.output()["y_pred"].path, index=False)
 
     def get_classifier(self):
-        return NotImplementedError 
-    
-    
+        return NotImplementedError
 
-# Step 3: Implement concrete classifiers
+# *************************************************************************
+# Step 3: Define Two Concrete Classifier Components
+# *************************************************************************
+
+
 class FitPredictDecisionTree(FitPredictClassifier):
     abstract = False
-    
+
     def get_classifier(self):
+        from sklearn.tree import DecisionTreeClassifier
         return DecisionTreeClassifier()
 
 
 class FitPredictRandomForest(FitPredictClassifier):
     abstract = False
-    
+
     def get_classifier(self):
+        from sklearn.ensemble import RandomForestClassifier
         return RandomForestClassifier()
-    
-    
-    
 
-# Step 4: Synthesize and run pipelines
-if __name__ == "__main__":
 
-    # collect components
-    target = FitPredictClassifier.return_type()
-    repository = RepoMeta.repository
+# *************************************************************************
+# Step 4: Synthesize and Run Pipelines
+# *************************************************************************
 
-    # build repository
-    fcl = FiniteCombinatoryLogic(
-        repository,
-        Subtypes(RepoMeta.subtypes),
-        processes=1)
+from cls.fcl import FiniteCombinatoryLogic
+from cls.subtypes import Subtypes
+from cls_luigi.inhabitation_task import RepoMeta
 
-    # synthesize pipelines
-    inhabitation_result = fcl.inhabit(target)
-    
-    max_tasks_when_infinite = 10
-    actual = inhabitation_result.size()
-    max_results = max_tasks_when_infinite
+# collect components and set target
+repository = RepoMeta.repository
+target = FitPredictClassifier.return_type()
 
-    if actual > 0:
-        max_results = actual
-    results = [t() for t in inhabitation_result.evaluated[0: max_results]]
+# build tree-grammar and synthesize pipelines
+fcl = FiniteCombinatoryLogic(repository, Subtypes(RepoMeta.subtypes))
+results = fcl.inhabit(target)
 
-    # run 
-    luigi.build(results, local_scheduler=True)
+# restrict number of pipelines to 10 if infinite
+num_pipes = results.size() # returns -1 if infinite
+num_pipes = 10 if num_pipes == -1 else num_pipes
+pipes = [t() for t in results.evaluated[0:num_pipes]]
+
+# handover pipelines to luigi scheduler
+luigi.build(pipes, local_scheduler=True)
