@@ -11,7 +11,6 @@ from cls_luigi.inhabitation_task import RepoMeta, CLSLuigiDecoder, CLSLugiEncode
 from cls.fcl import FiniteCombinatoryLogic
 from cls.subtypes import Subtypes
 from cls.debug_util import deep_str
-from cls_luigi.unique_task_pipeline_validator import UniqueTaskPipelineValidator
 
 # Global Parameters and AutoML validator
 from implementations.global_parameters import GlobalParameters
@@ -55,40 +54,38 @@ def generate_and_filter_pipelines():
     if actual > 0:
         max_results = actual
 
-    print("Filtering using UniqueTaskPipelineValidator...")
-    validator = UniqueTaskPipelineValidator(
-        [LoadSplitData, NumericalImputer, Scaler, FeaturePreprocessor,
-         Classifier])
-    pipelines = [t for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
-
+    pipelines = [t for t in inhabitation_result.evaluated[0:max_results]]
     print("Filtering using NotForbiddenValidator...")
     automl_validator = NotForbiddenValidator()
     pipelines = [t for t in pipelines if automl_validator.validate(t())]
+
     print("Generated {} pipelines".format(max_results))
     print("Number of pipelines after filtering:", len(pipelines))
     return pipelines
 
 
-def get_and_save_pipelines(pipelines_dir="json_pipelines"):
+def get_and_save_pipelines(ds_name, pipelines_dir="json_pipelines"):
     if os.path.exists(pipelines_dir):
-        print("Pipelines already exist!")
-        pipelines = []
-        for p_path in os.listdir(pipelines_dir):
-            p = load_json(
-                path=os.path.join(pipelines_dir, p_path),
-                decoder_cls=CLSLuigiDecoder
-            )
-            pipelines.append(p)
+        print("Pipelines already synthesized")
+        with TimeRecorder(f"logs/{ds_name}_pipelines_decoding_time.json"):
+            pipelines = []
+            for p_path in os.listdir(pipelines_dir):
+                p = load_json(
+                    path=os.path.join(pipelines_dir, p_path),
+                    decoder_cls=CLSLuigiDecoder
+                )
+                pipelines.append(p)
     else:
-        os.mkdir(pipelines_dir)
-        import_pipeline_components()
-        pipelines = generate_and_filter_pipelines()
-        for p in pipelines:
-            p_path = os.path.join(pipelines_dir, f"{p().task_id}.json")
-            dump_json(
-                obj=p,
-                path=p_path,
-                encoder_cls=CLSLugiEncoder)
+        with TimeRecorder("logs/pipeline_synthesis_and_encoding_time.json"):
+            os.mkdir(pipelines_dir)
+            import_pipeline_components()
+            pipelines = generate_and_filter_pipelines()
+            for p in pipelines:
+                p_path = os.path.join(pipelines_dir, f"{p().task_id}.json")
+                dump_json(
+                    obj=p,
+                    path=p_path,
+                    encoder_cls=CLSLugiEncoder)
 
     pipelines = instantiate_pipelines(pipelines)
     return pipelines
@@ -171,11 +168,8 @@ def run_test_phase(paths, best_pipeline, ds_name, seed, worker_timeout, workers=
         "*" * 150))
 
 
-def main(pipelines, seed, metric, ds_id, train_worker_timeout=100, test_worker_timeout=None, workers=1):
+def main(pipelines, seed, metric, ds_name, ds_paths, train_worker_timeout=100, test_worker_timeout=None, workers=1):
     os.makedirs("logs/luigi_logs", exist_ok=True)
-
-    print(f"Downloading dataset with ID {ds_id}")
-    ds_name, paths = download_and_save_openml_dataset(ds_id, seed)
 
     if pipelines:
 
@@ -183,7 +177,7 @@ def main(pipelines, seed, metric, ds_id, train_worker_timeout=100, test_worker_t
         print(f"                    Training and Testing on dataset: {ds_name}")
         print("=============================================================================================")
 
-        run_train_phase(paths, pipelines, ds_name, seed, train_worker_timeout, workers)
+        run_train_phase(ds_paths, pipelines, ds_name, seed, train_worker_timeout, workers)
 
         run_history_df = generate_and_save_run_history(ds_name=ds_name, sort_by_metric=metric)
         print("Generated and saved training run history for dataset:", ds_name)
@@ -192,7 +186,7 @@ def main(pipelines, seed, metric, ds_id, train_worker_timeout=100, test_worker_t
 
         best_pipeline_id = run_history_df.iloc[0]["last_task"][0]
         best_pipeline = [p for p in pipelines if p.task_id == best_pipeline_id][0]
-        run_test_phase(paths, best_pipeline, ds_name, seed, test_worker_timeout, workers)
+        run_test_phase(ds_paths, best_pipeline, ds_name, seed, test_worker_timeout, workers)
 
         print(test_summary_stats_str(ds_name))
         save_test_summary(ds_name)
@@ -255,18 +249,22 @@ if __name__ == "__main__":
     #     9983,  # eeg-eye-state
     #     3899,  # mozilla4
     #     9976,  # madelon
-    #
     #     146606,  # higgs
     #     167120,  # numerai28.6
     # ]
 
-    pipelines = get_and_save_pipelines()
+    print(f"Downloading dataset with ID {config.ds_id}")
+    ds_name, paths = download_and_save_openml_dataset(config.ds_id, seed)
+
+    os.makedirs("logs", exist_ok=True)
+    pipelines = get_and_save_pipelines(ds_name=ds_name)
 
     main(
         pipelines=pipelines,
         seed=config.seed,
         metric=config.metric,
-        ds_id=config.ds_id,
+        ds_name=ds_name,
+        ds_paths=paths,
         train_worker_timeout=config.train_worker_timeout,
         test_worker_timeout=config.test_worker_timeout,
         workers=config.workers)
