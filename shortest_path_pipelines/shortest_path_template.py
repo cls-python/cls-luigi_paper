@@ -1,5 +1,3 @@
-
-
 import time
 import luigi
 import numpy as np
@@ -21,7 +19,7 @@ import torch
 from models.pyepo_gurobi_shortest_path_solver import PyEPOGurobiShortestPathSolver
 from torch_dataset import TorchDataset
 from models.nn_regressor import fcNet
-
+from utils.time_recorder import TimeRecorder
 
 luigi.interface.core.log_level = "WARNING"
 
@@ -31,37 +29,39 @@ class SyntheticDataGenerator(BaseTaskClass):
 
     def run(self):
         print("=====SyntheticDataGenerator=====")
-        np.random.seed(self.global_params.seed)
+        with TimeRecorder(self.output()["run_time"].path):
+            np.random.seed(self.global_params.seed)
 
-        features, costs = pyepo.data.shortestpath.genData(
-            num_data=self.global_params.num_data + 1000,
-            num_features=self.global_params.num_features,
-            grid=self.global_params.grid,
-            deg=self.global_params.deg,
-            noise_width=self.global_params.noise_width,
-            seed=self.global_params.seed
-        )
-        print("Generated shortest-path Dataset...")
+            features, costs = pyepo.data.shortestpath.genData(
+                num_data=self.global_params.num_data + 1000,
+                num_features=self.global_params.num_features,
+                grid=self.global_params.grid,
+                deg=self.global_params.deg,
+                noise_width=self.global_params.noise_width,
+                seed=self.global_params.seed
+            )
+            print("Generated shortest-path Dataset...")
 
-        x_train, x_test, y_train, y_test = train_test_split(
-            features,
-            costs,
-            test_size=1000,
-            random_state=self.global_params.seed
-        )
+            x_train, x_test, y_train, y_test = train_test_split(
+                features,
+                costs,
+                test_size=1000,
+                random_state=self.global_params.seed
+            )
 
-        self.dump_pickle(x_train, self.output()["x_train"].path)
-        self.dump_pickle(x_test, self.output()["x_test"].path)
-        self.dump_pickle(y_train, self.output()["y_train"].path)
-        self.dump_pickle(y_test, self.output()["y_test"].path)
-        print("Split and saved dataset Data...")
+            self.dump_pickle(x_train, self.output()["x_train"].path)
+            self.dump_pickle(x_test, self.output()["x_test"].path)
+            self.dump_pickle(y_train, self.output()["y_train"].path)
+            self.dump_pickle(y_test, self.output()["y_test"].path)
+            print("Split and saved dataset Data...")
 
     def output(self):
         return {
             "x_train": self.get_luigi_local_target_with_task_id("x_train.pkl"),
             "x_test": self.get_luigi_local_target_with_task_id("x_test.pkl"),
             "y_train": self.get_luigi_local_target_with_task_id("y_train.pkl"),
-            "y_test": self.get_luigi_local_target_with_task_id("y_test.pkl")
+            "y_test": self.get_luigi_local_target_with_task_id("y_test.pkl"),
+            "run_time": self.get_luigi_local_target_with_task_id("run_time.json")
         }
 
 
@@ -74,19 +74,19 @@ class GenerateOptimalSolutionsAndObjectiveValues(BaseTaskClass):
 
     def run(self):
         print("=====GenerateOptimalSolutionsAndObjectiveValues=====")
+        with TimeRecorder(self.output()["run_time"].path):
+            solver = PyEPOGurobiShortestPathSolver(grid_size=self.global_params.grid)
 
-        solver = PyEPOGurobiShortestPathSolver(grid_size=self.global_params.grid)
+            y_train = self.load_pickle(self.input()["split_dataset"]["y_train"].path)
+            train_optimal_sols, train_optimal_objs = solver._get_solutions_and_objective_values(y_train)
+            self.dump_pickle(train_optimal_sols, self.output()["train_optimal_sols"].path)
+            self.dump_pickle(train_optimal_objs, self.output()["train_optimal_objs"].path)
 
-        y_train = self.load_pickle(self.input()["split_dataset"]["y_train"].path)
-        train_optimal_sols, train_optimal_objs = solver._get_solutions_and_objective_values(y_train)
-        self.dump_pickle(train_optimal_sols, self.output()["train_optimal_sols"].path)
-        self.dump_pickle(train_optimal_objs, self.output()["train_optimal_objs"].path)
-
-        y_test = self.load_pickle(self.input()["split_dataset"]["y_test"].path)
-        test_optimal_sols, test_optimal_objs = solver._get_solutions_and_objective_values(y_test)
-        self.dump_pickle(test_optimal_sols, self.output()["test_optimal_sols"].path)
-        self.dump_pickle(test_optimal_objs, self.output()["test_optimal_objs"].path)
-        print("Saved optimal solutions and objective values...")
+            y_test = self.load_pickle(self.input()["split_dataset"]["y_test"].path)
+            test_optimal_sols, test_optimal_objs = solver._get_solutions_and_objective_values(y_test)
+            self.dump_pickle(test_optimal_sols, self.output()["test_optimal_sols"].path)
+            self.dump_pickle(test_optimal_objs, self.output()["test_optimal_objs"].path)
+            print("Saved optimal solutions and objective values...")
 
     def output(self):
         return {
@@ -94,17 +94,22 @@ class GenerateOptimalSolutionsAndObjectiveValues(BaseTaskClass):
             "train_optimal_objs": self.get_luigi_local_target_with_task_id("train_optimal_objs.pkl"),
             "test_optimal_sols": self.get_luigi_local_target_with_task_id("test_optimal_sols.pkl"),
             "test_optimal_objs": self.get_luigi_local_target_with_task_id("test_optimal_objs.pkl"),
+            "run_time": self.get_luigi_local_target_with_task_id("run_time.json")
         }
 
 
 class SolutionApproach(BaseTaskClass):
     abstract = True
+    split_dataset = ClsParameter(tpe=SyntheticDataGenerator.return_type())
+
+    def requires(self):
+        return {"split_dataset": self.split_dataset()}
 
     def output(self):
         return {
             "test_predictions": self.get_luigi_local_target_with_task_id("test_predictions.pkl"),
-            "fitted_model": self.get_luigi_local_target_with_task_id("fitted_model.pkl")
-
+            "fitted_model": self.get_luigi_local_target_with_task_id("fitted_model.pkl"),
+            "run_time": self.get_luigi_local_target_with_task_id("run_time.json")
         }
 
 
@@ -114,28 +119,24 @@ class TwoStageSolution(SolutionApproach):
 
 class SKLMultiOutputRegressionModel(TwoStageSolution):
     abstract = True
-    split_dataset = ClsParameter(tpe=SyntheticDataGenerator.return_type())
-
     regressor = None
-
-    def requires(self):
-        return {"split_dataset": self.split_dataset()}
 
     def run(self):
         print(f"====={self.__class__.__name__}=====")
 
-        x_train, x_test, y_train, _ = self._load_split_dataset()
+        with TimeRecorder(self.output()["run_time"].path):
+            x_train, x_test, y_train, _ = self._load_split_dataset()
 
-        self._init_multioutput_regressor()
-        print(f"Training {self.__class__.__name__}...")
-        self.regressor.fit(x_train, y_train)
+            self._init_multioutput_regressor()
+            print(f"Training {self.__class__.__name__}...")
+            self.regressor.fit(x_train, y_train)
 
-        print(f"Predicting {self.__class__.__name__}...")
-        test_predictions = self.regressor.predict(x_test)
+            print(f"Predicting {self.__class__.__name__}...")
+            test_predictions = self.regressor.predict(x_test)
 
-        self.dump_pickle(test_predictions, self.output()["test_predictions"].path)
-        self.dump_pickle(self.regressor, self.output()["fitted_model"].path)
-        print(f"Saved predictions and model for {self.__class__.__name__}...")
+            self.dump_pickle(test_predictions, self.output()["test_predictions"].path)
+            self.dump_pickle(self.regressor, self.output()["fitted_model"].path)
+            print(f"Saved predictions and model for {self.__class__.__name__}...")
 
     def _load_split_dataset(self):
         x_train = self.load_pickle(self.input()["split_dataset"]["x_train"].path)
@@ -202,14 +203,12 @@ class LightGBMModelLinearTree(SKLMultiOutputRegressionModel):
         )
 
 
-class OneStageSolution(SolutionApproach):
+class EndToEndLearning(SolutionApproach):
     abstract = True
 
 
-class SPOPlus(OneStageSolution):
+class SPOPlus(EndToEndLearning):
     abstract = False
-
-    split_dataset = ClsParameter(tpe=SyntheticDataGenerator.return_type())
     sols_and_objs = ClsParameter(tpe=GenerateOptimalSolutionsAndObjectiveValues.return_type())
 
     regressor = None
@@ -221,29 +220,30 @@ class SPOPlus(OneStageSolution):
 
     def requires(self):
         return {
-            "split_dataset": self.split_dataset(),
+            "split_dataset": self.split_dataset(),  # already defined in SolutionApproach
             "opt_sols_and_objs": self.sols_and_objs()
         }
 
     def run(self):
         print("=====SPOPlus=====")
-        torch.cuda.empty_cache()
-        print("Cleared GPU cache...")
-        torch.manual_seed(self.global_params.seed)
-        torch.cuda.manual_seed(self.global_params.seed)
+        with TimeRecorder(self.output()["run_time"].path):
+            torch.cuda.empty_cache()
+            print("Cleared GPU cache...")
+            torch.manual_seed(self.global_params.seed)
+            torch.cuda.manual_seed(self.global_params.seed)
 
-        device = self._get_device()
+            device = self._get_device()
 
-        self._init_data_loaders()
-        self._init_regressor_and_optimizer(device)
-        self._train(device)
-        self.test_predictions = self._predict()
+            self._init_data_loaders()
+            self._init_regressor_and_optimizer(device)
+            self._train(device)
+            self.test_predictions = self._predict()
 
-        self.dump_pickle(self.test_predictions, self.output()["test_predictions"].path)
-        torch.save(self.regressor.state_dict(), self.output()["fitted_model"].path)
-        print("Saved predictions and model state...")
-        torch.cuda.empty_cache()
-        print("Cleared GPU cache again...")
+            self.dump_pickle(self.test_predictions, self.output()["test_predictions"].path)
+            torch.save(self.regressor.state_dict(), self.output()["fitted_model"].path)
+            print("Saved predictions and model state...")
+            torch.cuda.empty_cache()
+            print("Cleared GPU cache again...")
 
     def _init_data_loaders(self):
         x_train, x_test, y_train, y_test = self._load_split_dataset()
@@ -252,7 +252,8 @@ class SPOPlus(OneStageSolution):
         train_dataset = TorchDataset(X=x_train, y=y_train, sols=train_opt_sols, objs=train_opt_objs)
         test_dataset = TorchDataset(X=x_test, y=y_test, sols=test_opt_sols, objs=test_opt_objs)
 
-        self.train_loader = DataLoader(train_dataset, batch_size=self.global_params.batch, shuffle=True, num_workers=self.global_params.n_jobs)
+        self.train_loader = DataLoader(train_dataset, batch_size=self.global_params.batch, shuffle=True,
+                                       num_workers=self.global_params.n_jobs)
         self.test_loader = DataLoader(test_dataset, batch_size=self.global_params.batch, shuffle=False)
         print("Assigned data loaders...")
 
@@ -281,7 +282,6 @@ class SPOPlus(OneStageSolution):
         print("Training SPO+...")
         for epoch in pbar:
             for feats, costs, sols, objs in self.train_loader:
-
                 feats, costs, sols, objs = feats.to(device), costs.to(device), sols.to(device), objs.to(device)
                 self.optimizer.zero_grad()
                 predicted_costs = self.regressor(feats)
@@ -351,18 +351,19 @@ class GenerateSolutionsForPredictedCosts(BaseTaskClass):
 
     def output(self):
         return {
-            "test_prediction_solutions": self.get_luigi_local_target_with_task_id("test_solutions.pkl")
+            "test_prediction_solutions": self.get_luigi_local_target_with_task_id("test_solutions.pkl"),
+            "run_time": self.get_luigi_local_target_with_task_id("run_time.json")
         }
 
     def run(self):
         print("=====GenerateSolutionsForPredictedCosts=====")
+        with TimeRecorder(self.output()["run_time"].path):
+            test_predictions = self.load_pickle(self.input()["predictions"]["test_predictions"].path)
+            solver = PyEPOGurobiShortestPathSolver(self.global_params.grid)
+            prediction_sols, _ = solver._get_solutions_and_objective_values(test_predictions)
 
-        test_predictions = self.load_pickle(self.input()["predictions"]["test_predictions"].path)
-        solver = PyEPOGurobiShortestPathSolver(self.global_params.grid)
-        prediction_sols, _ = solver._get_solutions_and_objective_values(test_predictions)
-
-        self.dump_pickle(prediction_sols, self.output()["test_prediction_solutions"].path)
-        print("Saved prediction solutions...")
+            self.dump_pickle(prediction_sols, self.output()["test_prediction_solutions"].path)
+            print("Saved prediction solutions...")
 
 
 class Evaluation(BaseTaskClass):
@@ -387,19 +388,20 @@ class Evaluation(BaseTaskClass):
     def run(self):
         print("=====Evaluation=====")
 
-        true_objective_values = self.load_pickle(self.input()["optimal_sols_and_objs"]["test_optimal_objs"].path)
-        optimal_solutions = self.load_pickle(self.input()["optimal_sols_and_objs"]["test_optimal_sols"].path)
-        prediction_solutions = self.load_pickle(
-            self.input()["predicted_sols_and_objs"]["test_prediction_solutions"].path)
+        with TimeRecorder(self.output()["run_time"].path):
+            true_objective_values = self.load_pickle(self.input()["optimal_sols_and_objs"]["test_optimal_objs"].path)
+            optimal_solutions = self.load_pickle(self.input()["optimal_sols_and_objs"]["test_optimal_sols"].path)
+            prediction_solutions = self.load_pickle(
+                self.input()["predicted_sols_and_objs"]["test_prediction_solutions"].path)
 
-        predictions = self.load_pickle(self.input()["predictions"]["test_predictions"].path)
-        y_test = self.load_pickle(self.input()["split_dataset"]["y_test"].path)
+            predictions = self.load_pickle(self.input()["predictions"]["test_predictions"].path)
+            y_test = self.load_pickle(self.input()["split_dataset"]["y_test"].path)
 
-        self._compute_and_write_regret_in_summary(prediction_solutions, y_test, true_objective_values,
-                                                  optimal_solutions)
-        self._compute_and_write_mse_in_summary(predictions, y_test)
-        self._write_pipeline_steps()
-        self._save_outputs()
+            self._compute_and_write_regret_in_summary(prediction_solutions, y_test, true_objective_values,
+                                                      optimal_solutions)
+            self._compute_and_write_mse_in_summary(predictions, y_test)
+            self._write_pipeline_steps()
+            self._save_outputs()
 
     def _compute_and_write_regret_in_summary(self, predicted_sols, true_costs, true_objs, optimal_solutions,
                                              minimization=True):
@@ -441,6 +443,7 @@ class Evaluation(BaseTaskClass):
 
     def output(self):
         return {
-            "summary": self.get_luigi_local_target_with_task_id("summary.json")
-        }
+            "summary": self.get_luigi_local_target_with_task_id("summary.json"),
+            "run_time": self.get_luigi_local_target_with_task_id("run_time.json")
 
+        }

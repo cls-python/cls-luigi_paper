@@ -28,7 +28,7 @@ def collect_and_save_summaries(results_path="results", save_to_path="scores_and_
         sub_dir = pjoin(results_path, r)
 
         for file in os.listdir(sub_dir):
-            if file.endswith("json") and "Evaluation" in file:
+            if file.endswith("summary.json") and "Evaluation" in file:
                 evaluation_file = load_json(pjoin(sub_dir, file))
 
                 summaries_dict["problem_name"].append(problem_name)
