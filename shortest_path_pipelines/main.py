@@ -41,8 +41,9 @@ def generate_and_filter_pipelines():
     print("Filtering using UniqueTaskPipelineValidator...")
     validator = UniqueTaskPipelineValidator(
         [SolutionApproach, TwoStageSolution, SKLMultiOutputRegressionModel,
-        OneStageSolution])
+         EndToEndLearning])
     pipelines = [t() for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
+    p1 = [t() for t in inhabitation_result.evaluated[0:max_results]]
     if pipelines:
         print("Number of pipelines", max_results)
         print("Number of pipelines after filtering", len(pipelines))
@@ -80,13 +81,14 @@ def main(pipelines, training_size, deg, noise, seed):
 if __name__ == "__main__":
     pipelines = generate_and_filter_pipelines()
 
-    with TimeRecorder("elapsed_time.json"):
-    
+    with TimeRecorder("time.json") as tr:
+
         for training_size in [100, 1000, 5000]:
             for deg in [1, 2, 4, 6]:
                 for noise in [0, .5]:
                     for seed in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
                         main(pipelines, training_size, deg, noise, seed)
+                        tr.checkpoint(f"ts:{training_size}-deg:{deg}-noise:{noise}-seed:{seed}")
                     
                     
     summaries_df = collect_and_save_summaries()
