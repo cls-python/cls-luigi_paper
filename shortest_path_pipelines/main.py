@@ -43,7 +43,6 @@ def generate_and_filter_pipelines():
         [SolutionApproach, TwoStageSolution, SKLMultiOutputRegressionModel,
          EndToEndLearning])
     pipelines = [t() for t in inhabitation_result.evaluated[0:max_results] if validator.validate(t())]
-    p1 = [t() for t in inhabitation_result.evaluated[0:max_results]]
     if pipelines:
         print("Number of pipelines", max_results)
         print("Number of pipelines after filtering", len(pipelines))
