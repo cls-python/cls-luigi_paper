@@ -11,6 +11,7 @@ from cls_luigi.inhabitation_task import RepoMeta, CLSLuigiDecoder, CLSLugiEncode
 from cls.fcl import FiniteCombinatoryLogic
 from cls.subtypes import Subtypes
 from cls.debug_util import deep_str
+from tqdm import tqdm
 
 # Global Parameters and AutoML validator
 from implementations.global_parameters import GlobalParameters
@@ -125,13 +126,14 @@ def run_train_phase(paths, pipelines, ds_name, seed, worker_timeout, workers=1):
     with TimeRecorder(f"logs/{ds_name}_train_time.json"):
         set_luigi_worker_configs(timeout_sec=worker_timeout)
         with LuigiDaemon():
-            luigi.build(
-                pipelines,
-                local_scheduler=False,
-                logging_conf_file="logging.conf",
-                detailed_summary=True,
-                workers=workers,
-            )
+            for p in tqdm(pipelines):
+                luigi.build(
+                    [p],
+                    local_scheduler=False,
+                    logging_conf_file="logging.conf",
+                    detailed_summary=True,
+                    workers=workers,
+                )
 
     loggers[1].warning("\n{}\n{} This was dataset: {} {} training phase\n{}\n".format(
         "*" * 150,
