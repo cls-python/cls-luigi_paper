@@ -118,7 +118,10 @@ if __name__ == "__main__":
         'numerai28.6',
         'higgs',
     ]
-    
-    
+
     for ds in datasets:
-        main(ds, time_factor, seed)
+        try:
+            main(ds, time_factor, seed)
+        except:
+            print(f"Failed to run AutoSklearn with dataset {ds}!")
+            print("Make sure you downloaded the dataset and it exists in the datasets folder")
