@@ -63,12 +63,9 @@ cd shortest_path_pipelines
 python main.py
 ````
 ### Pipelines outputs and regret comparison graph.
-Once completed, you may find the results of all runs under `shortest_path_pipelines/results/` directory.
+After running the pipelines, you can find the outputs of the pipeline in the `shortest_path_pipelines/results/` directory.
 
-The `shortest_path_pipelines/scores_and_plots/` directory clear
-contains all scores and regret comparison graph.
-
-
+The regret score for each pipeline and the regret comparison graph will be saved automatically in the `shortest_path_pipelines/scores_and_plots/` directory.
 
 ## Running the binary classification example
 
@@ -154,8 +151,7 @@ After running all pipelines, you cab find in the `binary_classfication_pipelines
 - elapsed seconds for synthesizing all pipelines  (JSON)
 - elapsed seconds for decoding all pipelines per dataset, since synthesis occurs only once (JSON)
 - summary of best-performing pipelines and their test scores (CSV)
-- Luigi logs (TEXT)
--
+- Luigi logs (TXT)
 ### Inhabitation Rules
 Inhabitation rules are saved as a txt file at `binary_classfication_pipelines/inhabitation_rules.txt`.
 
