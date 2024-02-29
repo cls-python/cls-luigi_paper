@@ -1,4 +1,4 @@
-cls_luigi==0.1.0
+cls_luigi==0.1.1
 numpy~=1.26.3
 scipy~=1.11.4
 torch~=2.1.2
