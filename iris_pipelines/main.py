@@ -1,68 +1,108 @@
 # *************************************************************************
-# Step 1: Define Loading Data Component
+# Step 1: Define LoadIris Component
 # *************************************************************************
 
 import luigi
 from cls_luigi.inhabitation_task import LuigiCombinator
-import pandas as pd
 
-class LoadIrisDataset(luigi.Task, LuigiCombinator):
+
+class LoadIris(luigi.Task, LuigiCombinator):
 
     def output(self):
-        return {
-            "X": luigi.LocalTarget("X.csv"),
-            "y": luigi.LocalTarget("y.csv")}
+        return luigi.LocalTarget("iris.csv")
 
     def run(self):
         from sklearn.datasets import load_iris
-
-        iris = load_iris(as_frame=True)
-        X = iris.data
-        y = iris.target
-
-        X.to_csv(self.output()["X"].path, index=False)
-        y.to_csv(self.output()["y"].path, index=False)
+        ds = load_iris(as_frame=True).frame
+        ds.to_csv(self.output().path, index=False)
 
 
 # *************************************************************************
-# Step 2 : Define Abstract Classifier Component
+# Step 2 : Define Abstract Scaler Component
 # *************************************************************************
 
 from cls_luigi.inhabitation_task import ClsParameter
+import pandas as pd
 
-class FitPredictClassifier(luigi.Task, LuigiCombinator):
-    abstract = True # place holder
-    iris = ClsParameter(tpe=LoadIrisDataset.return_type())
+
+class Scaler(luigi.Task, LuigiCombinator):
+    abstract = True  # placeholder
+    iris = ClsParameter(tpe=LoadIris.return_type())
 
     def requires(self):
-        return self.iris() # from line 5
+        return self.iris()  # from line 6
 
     def output(self):
-        variant_label = self.task_id
-        return {"y_pred": luigi.LocalTarget(f"y_pred-{variant_label}.csv")}
+        return luigi.LocalTarget(f"scaled_iris_{self.task_id}.csv")
+
+    def run(self):
+        # load dataset from previous component
+        ds = pd.read_csv(self.input().path)
+        feats = ds.drop(columns="target", axis=1)
+
+        # transform features and save
+        scaler = self.get_scaler()
+        ds[feats.columns] = scaler.fit_transform(feats)
+        ds.to_csv(self.output().path, index=False)
+
+    def get_scaler(self):
+        return NotImplementedError
+
+
+# *************************************************************************
+# Step 3: Define Two Concrete Scaler Components
+# *************************************************************************
+
+class MinMaxScaling(Scaler):
+    abstract = False
+
+    def get_scaler(self):
+        from sklearn.preprocessing import MinMaxScaler
+        return MinMaxScaler()
+
+
+class RobustScaling(Scaler):
+    abstract = False
+
+    def get_scaler(self):
+        from sklearn.preprocessing import RobustScaler
+        return RobustScaler()
+
+
+# *************************************************************************
+# Step 4: Define Abstract & Concrete Classifier Components
+# *************************************************************************
+
+
+class Classifier(luigi.Task, LuigiCombinator):
+    abstract = True  # placeholder
+    scaled_ds = ClsParameter(tpe=Scaler.return_type())
+
+    def requires(self):
+        return self.scaled_ds()
+
+    def output(self):
+        return luigi.LocalTarget(f"y_pred-{self.task_id}.csv")
 
     def run(self):
         # load data from previous component
-        X = pd.read_csv(self.input()["X"].path)
-        y = pd.read_csv(self.input()["y"].path)
+        ds = pd.read_csv(self.input().path)
+        X = ds.drop(columns="target", axis=1)
+        y = ds["target"]
 
-        #fit classifier
+        # fit classifier
         clf = self.get_classifier()
         clf.fit(X, y)
 
-        #predict and save predictions
+        # predict and save predictions
         y_pred = pd.DataFrame(data=clf.predict(X), columns=["y_pred"])
-        y_pred.to_csv(self.output()["y_pred"].path, index=False)
+        y_pred.to_csv(self.output().path, index=False)
 
     def get_classifier(self):
         return NotImplementedError
 
-# *************************************************************************
-# Step 3: Define Two Concrete Classifier Components
-# *************************************************************************
 
-
-class FitPredictDecisionTree(FitPredictClassifier):
+class DecisionTree(Classifier):
     abstract = False
 
     def get_classifier(self):
@@ -70,7 +110,7 @@ class FitPredictDecisionTree(FitPredictClassifier):
         return DecisionTreeClassifier()
 
 
-class FitPredictRandomForest(FitPredictClassifier):
+class RandomForest(Classifier):
     abstract = False
 
     def get_classifier(self):
@@ -79,7 +119,7 @@ class FitPredictRandomForest(FitPredictClassifier):
 
 
 # *************************************************************************
-# Step 4: Synthesize and Run Pipelines
+# Step 5: Synthesize and Run Pipelines
 # *************************************************************************
 
 from cls.fcl import FiniteCombinatoryLogic
@@ -88,14 +128,14 @@ from cls_luigi.inhabitation_task import RepoMeta
 
 # collect components and set target
 repository = RepoMeta.repository
-target = FitPredictClassifier.return_type()
+target = Classifier.return_type()
 
 # build tree-grammar and synthesize pipelines
 fcl = FiniteCombinatoryLogic(repository, Subtypes(RepoMeta.subtypes))
 results = fcl.inhabit(target)
 
 # restrict number of pipelines to 10 if infinite
-num_pipes = results.size() # returns -1 if infinite
+num_pipes = results.size()  # returns -1 if infinite
 num_pipes = 10 if num_pipes == -1 else num_pipes
 pipes = [t() for t in results.evaluated[0:num_pipes]]
 
