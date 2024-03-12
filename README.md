@@ -199,7 +199,7 @@ All experiments were run on a machine with the following specifications:
 | __OS__   | Manjaro Linux 23.1.0 Vulcan        |
 | __CPU__  | Intel(R) Xeon(R) w5-2445 x86_64    |
 | __GPUs__ | 2 x NVIDIA RTX 6000 Ada Generation |
-| __RAM__  | ~131.5 GB                          |
+| __RAM__  | 128 GB                          |
 
 And were also tested on Ubuntu 22.04 as well as Pop_OS!.
 
