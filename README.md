@@ -2,13 +2,14 @@
 
 
 This repository contains the official implementation of the examples in the paper:
-[CLS-Luigi: A library for automatic analytics pipelines generation](https://i.pinimg.com/474x/fc/27/fb/fc27fb16e1e692e07f8bb3764dfc633b.jpg)
+
+CLS-Luigi: Analytics Pipeline Synthesis
 
 ```
 @article{meyer2024clsluigi,
-  title={CLS-Luigi: A library for automatic analytics pipelines generation},
-  author={},
-  journal={},
+  title={{CLS-Luigi}: {A}nalytics {P}ipeline {S}ynthesis},
+  author={Meyer, Anne and Kutabi, Hadi and Bessai, Jan and Scholtyssek, Daniel},
+  journal={Under Review for the 18th Learning and Intelligent Optimization Conference},
   year={2024}
 }
 ```
