@@ -46,8 +46,8 @@ If you are having problems with downloading Auto-Sklearn, please consult their [
 
 ## Running the iris example
 
-<p align="center"><img width="65%" src="images/iris_template.svg" /></p>
-To run this example, use the following commands:
+<p align="center"><img width="66%" src="images/iris_template.svg" /></p>
+To run this example, use the following commands: 
 
 ````
 cd iris_pipelines
