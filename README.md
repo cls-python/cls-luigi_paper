@@ -6,10 +6,10 @@ This repository contains the official implementation of the examples in the pape
 CLS-Luigi: Analytics Pipeline Synthesis
 
 ```
-@article{meyer2024clsluigi,
+@article{meyer2024cls,
   title={{CLS-Luigi}: {A}nalytics {P}ipeline {S}ynthesis},
   author={Meyer, Anne and Kutabi, Hadi and Bessai, Jan and Scholtyssek, Daniel},
-  journal={Under Review for the 18th Learning and Intelligent Optimization Conference},
+  note = {accepted in The 18th Learning and Intelligent Optimization Conference}},
   year={2024}
 }
 ```
