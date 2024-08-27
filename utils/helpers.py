@@ -1,5 +1,11 @@
 from os.path import join as pjoin
+from random import random
+
+import numpy as np
 import pandas as pd
+import scipy
+import torch
+
 from utils.io_methods import load_json
 
 
@@ -38,3 +44,12 @@ def get_best_askl_pipeline(pipeline_id, ds_name, seed, askl1=True):
     }
 
     return best_pipeline
+
+def set_seed(seed=42):
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        scipy.random.seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+

@@ -8,12 +8,13 @@ sys.path.append(ROOT)
 
 from os.path import join as pjoin
 from utils.io_methods import dump_pickle, dump_json
-from utils.helpers import load_split_dataset, get_task_seconds, get_best_askl_pipeline
+from utils.helpers import load_split_dataset, get_task_seconds, get_best_askl_pipeline, set_seed
 from autogluon.tabular import TabularDataset, TabularPredictor
 
 
 def main(ds, time_factor, seed):
     print(f"Running AutoGluon with dataset {ds}...")
+    set_seed(seed)
 
     x_train, x_test, y_train, y_test = load_split_dataset(ds, root=ROOT)
 
@@ -66,30 +67,31 @@ def main(ds, time_factor, seed):
 
 if __name__ == "__main__":
 
+
     seed = 42
     time_factor = 2
 
     datasets = [
-        # 'spambase',  # exists in autosklearn
-        # 'sylvine',
-        # 'bank-marketing',
-        # 'phoneme',
-        # 'kc1',  # exists in autosklearn
+        'spambase',  # exists in autosklearn
+        'sylvine',
+        'bank-marketing',
+        'phoneme',
+        'kc1',  # exists in autosklearn
         'pc4',  # exists in autosklearn
-        # 'wilt',  # exists in autosklearn
-        # 'qsar-biodeg',  # exists in autosklearn
-        # 'mozilla4',  # exists in autosklearn
-        # 'steel-plates-fault',  # exists in autosklearn
-        # 'ozone-level-8hr',  # exists in autosklearn
-        # 'eeg-eye-state',  # exists in autosklearn
-        # 'madelon',
-        # 'numerai28.6',
-        # 'higgs',
+        'wilt',  # exists in autosklearn
+        'qsar-biodeg',  # exists in autosklearn
+        'mozilla4',  # exists in autosklearn
+        'steel-plates-fault',  # exists in autosklearn
+        'ozone-level-8hr',  # exists in autosklearn
+        'eeg-eye-state',  # exists in autosklearn
+        'madelon',
+        'numerai28.6',
+        'higgs',
     ]
 
     for ds in datasets:
-        # try:
-        main(ds, time_factor, seed)
-        # except:
-        #     print(f"Failed to run AutoSklearn with dataset {ds}!")
-        #     print("Make sure you downloaded the dataset and it exists in the datasets folder")
+        try:
+            main(ds, time_factor, seed)
+        except:
+            print(f"Failed to run AutoSklearn with dataset {ds}!")
+            print("Make sure you downloaded the dataset and it exists in the datasets folder")
