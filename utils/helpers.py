@@ -1,10 +1,8 @@
 from os.path import join as pjoin
-from random import random
-
+import random
 import numpy as np
 import pandas as pd
-import scipy
-import torch
+#import torch
 
 from utils.io_methods import load_json
 
@@ -26,13 +24,13 @@ def get_task_seconds(ds_name, root, factor):
     return int(load_json(path)["total_seconds"] * factor)
 
 
-def get_best_askl_pipeline(pipeline_id, ds_name, seed, askl1=True):
-    if askl1:
-        run_history_path = pjoin(f"askl1_results/{ds_name}/smac3-output/run_{seed}/runhistory.json")
-    else:
-        run_history_path = pjoin(f"askl2_results/{ds_name}/smac3-output/run_{seed}/runhistory.json")
+def get_best_askl_pipeline(path, pipeline_id):
+    #if askl1:
+    #    run_history_path = pjoin(f"askl1_results/{ds_name}/smac3-output/run_{seed}/runhistory.json")
+    #else:
+    #    run_history_path = pjoin(f"askl2_results/{ds_name}/smac3-output/run_{seed}/runhistory.json")
 
-    run_history =load_json(run_history_path)
+    run_history =load_json(path)
     best_pipeline_raw = run_history["configs"][str(pipeline_id - 1)]
 
     best_pipeline = {
@@ -48,8 +46,8 @@ def get_best_askl_pipeline(pipeline_id, ds_name, seed, askl1=True):
 def set_seed(seed=42):
         random.seed(seed)
         np.random.seed(seed)
-        torch.manual_seed(seed)
-        scipy.random.seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
+       # torch.manual_seed(seed)
+       # scipy.random.seed(seed)
+       # torch.cuda.manual_seed(seed)
+       # torch.cuda.manual_seed_all(seed)
 
