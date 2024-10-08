@@ -217,7 +217,7 @@ if __name__ == "__main__":
         "validation_score": inc["validation_score"],
         "test_score": incumbent_luigi_pipeline.get_score(PIPELINE_METRIC)["test"]
     }
-    dump_json(pjoin(OUTPUTS_DIR, "incumbent_score.json"), inc_score)
+    dump_json(pjoin(RUN_DIR, "incumbent_score.json"), inc_score)
     opt.shut_down()
 
 
