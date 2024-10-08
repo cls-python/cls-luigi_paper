@@ -205,11 +205,7 @@ if __name__ == "__main__":
 
     CWD = os.getcwd()
     DEFAULT_OUTPUT_DIR = pjoin(CWD, "enumeration_outputs")
-
-    DATASETS_DIR = pjoin(
-        Path(CWD).parent.absolute(),
-        "datasets"
-    )
+    DATASETS_DIR = pjoin(str(Path(CWD).parent.absolute()), "datasets")
 
     parser.add_argument("--outputs_dir",
                         type=str,
@@ -233,10 +229,9 @@ if __name__ == "__main__":
                         default="accuracy",
                         help="Metric for sorting the results")
 
-    parser.add_argument("--ds_id",
-                        type=int,
-                        default=359962,
-                        help="OpenML dataset ID. Default is kc1 classification dataset.")
+    parser.add_argument('--ds_name',
+                        type=str,
+                        help='Dataset name')
 
     parser.add_argument("--train_worker_timeout",
                         type=int,
@@ -253,13 +248,35 @@ if __name__ == "__main__":
                         default=1,
                         help="Number of luigi workers")
 
+
+
+
     config = parser.parse_args()
+    DS_DIR = pjoin(DATASETS_DIR, config.ds_name)
 
-    print(f"Downloading dataset with ID {config.ds_id}")
-    ds_name, paths = download_and_save_openml_dataset(config.datasets_dir,
-                                                      config.ds_id, config.seed)
+    paths = {
+        "train_phase": {
 
-    DS_OUTPUT_DIR = pjoin(DEFAULT_OUTPUT_DIR, f"seed-{config.seed}", ds_name)
+            "x_train_path": pjoin(DS_DIR, f"seed-{config.seed}", "train_phase",  "x_train.csv"),
+            "x_valid_path": pjoin(DS_DIR, f"seed-{config.seed}", "train_phase", "x_valid.csv"),
+            "y_train_path": pjoin(DS_DIR, f"seed-{config.seed}", "train_phase", "y_train.csv"),
+            "y_valid_path": pjoin(DS_DIR, f"seed-{config.seed}", "train_phase", "y_valid.csv"),
+        },
+        "test_phase": {
+            "x_train_path": pjoin(DS_DIR, f"seed-{config.seed}", "test_phase", "x_train.csv"),
+            "x_test_path": pjoin(DS_DIR, f"seed-{config.seed}", "test_phase", "x_test.csv"),
+            "y_train_path": pjoin(DS_DIR, f"seed-{config.seed}", "test_phase", "y_train.csv"),
+            "y_test_path": pjoin(DS_DIR, f"seed-{config.seed}", "test_phase", "y_test.csv"),
+        }
+
+    }
+
+
+    # print(f"Downloading dataset with ID {config.ds_id}")
+    # ds_name, paths = download_and_save_openml_dataset(config.datasets_dir,
+    #                                                   config.ds_id, config.seed)
+
+    DS_OUTPUT_DIR = pjoin(DEFAULT_OUTPUT_DIR, f"seed-{config.seed}", config.ds_name)
     LOGS_DIR = pjoin(DS_OUTPUT_DIR, "logs")
     PIPELINES_DIR = pjoin(DS_OUTPUT_DIR, "pipelines")
     PIPELINE_OUTPUTS = pjoin(DS_OUTPUT_DIR, "pipelines_outputs")
@@ -278,7 +295,7 @@ if __name__ == "__main__":
         pipelines=pipelines,
         seed=config.seed,
         metric=config.metric,
-        ds_name=ds_name,
+        ds_name=config.ds_name,
         ds_paths=paths,
         train_worker_timeout=config.train_worker_timeout,
         test_worker_timeout=config.test_worker_timeout,
