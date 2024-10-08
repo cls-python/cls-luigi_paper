@@ -1,13 +1,87 @@
+import pickle
+import json
+from os.path import join as pjoin
+
+
+def load_json(path, mode="r", decoder_cls=None):
+    with open(path, mode) as f:
+        return json.load(f, cls=decoder_cls)
+
+
+def dump_json(obj, path, mode="w", encoder_cls=None):
+    with open(path, mode) as f:
+        json.dump(obj, f, indent=4, cls=encoder_cls)
+
+
+def load_pickle(path, mode="rb"):
+    with open(path, mode) as f:
+        pickle.load(f)
+
+
+def dump_pickle(obj, path, mode="wb"):
+    with open(path, mode) as f:
+        pickle.dump(obj, f)
+
+
+def dump_txt(string, path, mode="w"):
+    with open(path, mode) as f:
+        f.write(string)
+
+
+def get_best_askl_pipeline(path, pipeline_id):
+    #if askl1:
+    #    run_history_path = pjoin(f"askl1_results/{ds_name}/smac3-output/run_{seed}/runhistory.json")
+    #else:
+    #    run_history_path = pjoin(f"askl2_results/{ds_name}/smac3-output/run_{seed}/runhistory.json")
+
+    run_history =load_json(path)
+    try:
+        best_pipeline_raw = run_history["configs"][str(pipeline_id -1)]
+
+        best_pipeline = {
+            "id_in_leaderboard": pipeline_id,
+            "id_in_run_history": pipeline_id - 1,
+            "classifier": best_pipeline_raw["classifier:__choice__"],
+            "feature_preprocessor": best_pipeline_raw["feature_preprocessor:__choice__"],
+            "scaler": best_pipeline_raw["data_preprocessor:feature_type:numerical_transformer:rescaling:__choice__"]
+        }
+        return best_pipeline
+    except Exception as e:
+        return {
+            "Failure Exception": str(e)
+        }
+
+
+def get_luigi_enumeration_time(cwd, ds_name, seed):
+
+    return load_json(
+        pjoin(
+            cwd,
+            "enumeration_outputs",
+            f"seed-{seed}",
+            f"{ds_name}",
+            "logs",
+            "train_time.json")
+    )["total_seconds"]
+
+def set_seed(seed=42):
+    import random
+    random.seed(seed)
+    import numpy as np
+    np.random.seed(seed)
+# torch.manual_seed(seed)
+# scipy.random.seed(seed)
+# torch.cuda.manual_seed(seed)
+# torch.cuda.manual_seed_all(seed)
+
+
 import pandas as pd
 from os import listdir, makedirs
 from os.path import join as pjoin
 
 
-from utils.io_methods import load_json, dump_json
-
 
 def generate_and_save_run_history(ds_name, out_dir, results_dir, sort_by_metric="accuracy"):
-
     imputer_col = []
     scaler_col = []
     feature_preprocessor_col = []
@@ -21,7 +95,7 @@ def generate_and_save_run_history(ds_name, out_dir, results_dir, sort_by_metric=
 
     dataset_dir = results_dir
     for file in listdir(dataset_dir):
-        
+
         if "_incumbent" not in file:
 
             if file.endswith("json"):
@@ -141,7 +215,6 @@ def save_test_summary(pipeline, metric="accuracy", out_path="logs"):
     # assert len(run_summary) == 1, f"There exists more than one run_summary in the incumbet folder of {ds_name}"
     # run_summary = run_summary[0]
 
-
     run_summary = load_json(pipeline.output()["run_summary"].path)
 
     summary = {
@@ -151,8 +224,6 @@ def save_test_summary(pipeline, metric="accuracy", out_path="logs"):
     }
     # path = pjoin(out_path, "test_summary.json")
     dump_json(summary, pjoin(out_path, "test_summary.json"))
-
-
 
 
 def save_test_scores_and_pipelines_for_all_datasets(results_dir, metric="accuracy",

@@ -1,0 +1,13 @@
+pandas~=2.2.3
+scikit-learn~=1.5.2
+luigi~=3.5.2
+networkx~=3.3
+numpy~=2.1.2
+joblib~=1.4.2
+tqdm~=4.66.5
+openml~=0.15.0
+docutils~=0.21.2
+matplotlib~=3.9.2
+pynisher~=1.0.10
+requests~=2.32.3
+setuptools~=75.1.0
