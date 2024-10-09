@@ -191,11 +191,20 @@ if __name__ == "__main__":
                         ],
                         help="List of dataset IDs to be downloaded from OpenML")
 
+    parser.add_argument("--additional_datasets",
+                        type=list_of_ints,
+                        default=[],
+                        help="IDs of additional OpenML datasets to be downloaded and split"
+                        )
 
     parsed = parser.parse_args()
+    
+    ids = parsed.datasets_ids
+    ids.extend(parsed.additional_datasets)
+    
 
 
-    for dataset_id in parsed.datasets_ids:
+    for dataset_id in ids:
         try:
             ds_name, _ = download_and_save_openml_dataset(
                 datasets_dir=pjoin(parsed.download_to_dir, "datasets"),

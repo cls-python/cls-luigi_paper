@@ -12,7 +12,7 @@ from automl.utils import get_luigi_enumeration_time, dump_pickle, dump_json, set
 from autogluon.tabular import TabularDataset, TabularPredictor
 
 
-def main(ds, time_factor, seed, n_jobs, presets, datasets_dir, cls_luigi_dir, working_dir):
+def main(ds, seed, n_jobs, presets, datasets_dir, working_dir, task_time):
 
     print(f"Running AutoGluon with dataset {ds}...")
     set_seed(seed)
@@ -30,8 +30,6 @@ def main(ds, time_factor, seed, n_jobs, presets, datasets_dir, cls_luigi_dir, wo
     test = x_test.copy()
     test[label] = y_test[label].tolist()
 
-    task_time = get_luigi_enumeration_time(cls_luigi_dir, ds, seed) * time_factor
-    task_time = int(task_time)
 
     print(f"time_left_for_this_task is set to {task_time} seconds")
 
@@ -89,18 +87,18 @@ if __name__ == "__main__":
 
     parser.add_argument("--time_factor",
                         type=float,
-                        default=1,
+                        default=2.0,
                         help="allowed time for running AutoML systems = CLS-Luigi time * time_factor")
 
+    parser.add_argument("--max_sec",
+                    type=int,
+                    default=0,
+                    help="Max seconds to run the MCTS, If this time is 0, the enumeration time will be used"
+                    )
+        
     parser.add_argument('--ds_name',
                         type=str,
                         help='Dataset name')
-
-    parser.add_argument("--n_jobs",
-                        type=int,
-                        default=1,
-                        help="Number of jobs ")
-
     parser.add_argument("--datasets_dir",
                         type=str,
                         default=DATASETS_DEFAULT_DIR,
@@ -114,19 +112,30 @@ if __name__ == "__main__":
     parser.add_argument("--presets",
                         type=str,
                         default="best_quality",
+                        choices=["best_quality", "medium_quality", "high_quality"],
                         help="Preset to use in AutoGluon")
+    
+    parser.add_argument("--n_jobs",
+                    type=int,
+                    default=1,
+                    help="Number of jobs ")
+    
     config = parser.parse_args()
+
+    task_time = config.max_sec if config.max_sec > 0 else get_luigi_enumeration_time(
+        CLS_LUIGI_DIR, config.ds_name, config.seed) * config.time_factor
+    task_time = int(task_time)
+    
+    print(task_time)
 
     main(
         config.ds_name,
-        config.time_factor,
         config.seed,
         config.n_jobs,
         config.presets,
         config.datasets_dir,
-        CLS_LUIGI_DIR,
-        config.working_dir
-
+        config.working_dir,
+        task_time
     )
 
 

@@ -28,7 +28,6 @@ from implementations.template import *
 
 from automl.download_and_save_openml_datasets import download_and_save_openml_dataset
 from automl.cls_luigi_automl.import_pipeline_components import import_pipeline_components
-
 from cls_luigi.tools.luigi_daemon import LinuxLuigiDaemonHandler as LuigiDaemon
 from cls_luigi.tools.time_recorder import TimeRecorder
 
@@ -163,14 +162,12 @@ def run_test_phase(paths, best_pipeline, pipeline_outputs_dir, ds_name, seed, wo
         "*" * (65 - len(str(paths))),
         "*" * 150))
 
-
 def main(pipelines, seed, metric, ds_name, ds_paths,
          train_outputs_dir, test_output_dir, logs_dir,
          train_worker_timeout=100,
          test_worker_timeout=None, workers=1):
 
     if pipelines:
-
         print("=============================================================================================")
         print(f"                    Training and Testing on dataset: {ds_name}")
         print("=============================================================================================")
@@ -250,9 +247,8 @@ if __name__ == "__main__":
 
 
 
-
     config = parser.parse_args()
-    DS_DIR = pjoin(DATASETS_DIR, config.ds_name)
+    DS_DIR = pjoin(config.datasets_dir, config.ds_name)
 
     paths = {
         "train_phase": {
@@ -276,7 +272,7 @@ if __name__ == "__main__":
     # ds_name, paths = download_and_save_openml_dataset(config.datasets_dir,
     #                                                   config.ds_id, config.seed)
 
-    DS_OUTPUT_DIR = pjoin(DEFAULT_OUTPUT_DIR, f"seed-{config.seed}", config.ds_name)
+    DS_OUTPUT_DIR = pjoin(config.outputs_dir, f"seed-{config.seed}", config.ds_name)
     LOGS_DIR = pjoin(DS_OUTPUT_DIR, "logs")
     PIPELINES_DIR = pjoin(DS_OUTPUT_DIR, "pipelines")
     PIPELINE_OUTPUTS = pjoin(DS_OUTPUT_DIR, "pipelines_outputs")

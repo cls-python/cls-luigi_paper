@@ -32,8 +32,8 @@ def main(
         n_jobs,
         memory_limit,
         datasets_dir,
-        cls_luigi_dir,
-        working_dir
+        working_dir,
+        task_time
 ):
     print(f"Running AutoSklearn {askl_version} with dataset {ds}...")
 
@@ -42,8 +42,7 @@ def main(
     y_train = pd.read_csv(pjoin(datasets_dir, ds, f"seed-{seed}", "test_phase", "y_train.csv"))
     y_test = pd.read_csv(pjoin(datasets_dir, ds, f"seed-{seed}", "test_phase", "y_test.csv"))
 
-    task_time = get_luigi_enumeration_time(cls_luigi_dir, ds, seed) * time_factor
-    task_time = int(task_time)
+
     print(f"time_left_for_this_task is set to {task_time} seconds")
 
     logging_config = logging.basicConfig(level=logging.DEBUG,
@@ -63,12 +62,12 @@ def main(
 
     if apply_ensemble:
         print("Running with ensembling")
-        run_dir = pjoin(working_dir, "askl", f"askl{askl_version}_ens_results", ds, f"time_factor-{time_factor}")
+        run_dir = pjoin(working_dir, "askl_results", f"askl{askl_version}_ens_results", ds, f"time_factor-{time_factor}")
 
     else:
         print("Running without ensembling")
 
-        run_dir = pjoin(working_dir, "askl", f"askl{askl_version}_no_ens_results", ds, f"time_factor-{time_factor}")
+        run_dir = pjoin(working_dir, "askl_results", f"askl{askl_version}_no_ens_results", ds, f"time_factor-{time_factor}")
         askl_config["ensemble_class"] = None
 
     askl_config["tmp_folder"] = run_dir
@@ -114,14 +113,12 @@ def main(
         get_best_askl_pipeline(
             pjoin(run_dir, f"smac3-output/run_{seed}/runhistory.json"),
             best_pipeline_id))
-
-    print("Saving best pipeline summary...")
-
-    dump_json(best_pipeline_summary, pjoin(run_dir, "best_pipeline_summary.json"))
-
-    print(
-        "Done!\n==================================================================================================\n\n")
-
+    
+    
+    dump_json(
+        obj=best_pipeline_summary, 
+        path=pjoin(run_dir, "best_pipeline_summary.json")
+        )
 
 if __name__ == "__main__":
     import argparse
@@ -140,12 +137,18 @@ if __name__ == "__main__":
 
     parser.add_argument("--time_factor",
                         type=float,
-                        default=1,
+                        default=2.0,
                         help="allowed time for running AutoML systems = CLS-Luigi time * time_factor")
 
+        
+    parser.add_argument("--max_sec",
+                        type=int,
+                        default=0,
+                        help="Max seconds to run the MCTS, If this time is 0, the enumeration time will be used"
+                        )
+    
     parser.add_argument("--askl_version",
                         type=int,
-                        default=1,
                         choices=[1, 2],
                         help="Whether to use AutoSklearn 1.0 or 2.0")
 
@@ -182,27 +185,13 @@ if __name__ == "__main__":
 
 
     config = parser.parse_args()
+    
+    task_time = config.max_sec if config.max_sec > 0 else get_luigi_enumeration_time(
+        CLS_LUIGI_DIR,
+        config.ds_name,
+        config.seed) * config.time_factor
+    task_time = int(task_time)
 
-    # datasets = [
-    #     'spambase',  # exists in autosklearn
-    #     'sylvine',
-    #     'bank-marketing',
-    #     'phoneme',
-    #     'kc1',  # exists in autosklearn
-    #     'pc4',  # exists in autosklearn
-    #     'wilt',  # exists in autosklearn
-    #     'qsar-biodeg',  # exists in autosklearn
-    #     'mozilla4',  # exists in autosklearn
-    #     'steel-plates-fault',  # exists in autosklearn
-    #     'ozone-level-8hr',  # exists in autosklearn
-    #     'eeg-eye-state',  # exists in autosklearn
-    #     'madelon',
-    #     'numerai28.6',
-    #     'higgs',
-    # ]
-
-    # for ds in datasets:
-    # try:
     main(
         config.ds_name,
         config.time_factor,
@@ -212,8 +201,8 @@ if __name__ == "__main__":
         config.n_jobs,
         config.memory_limit,
         config.datasets_dir,
-        CLS_LUIGI_DIR,
-        config.working_dir
+        config.working_dir,
+        task_time
     )
     # except:
     #     print(f"Failed to run AutoSklearn with dataset {config.ds_name}!")

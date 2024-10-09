@@ -33,9 +33,7 @@ def get_luigi_enumeration_time(cwd, ds_name, seed):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Run MCTS')
-    parser.add_argument('--ds_name', type=str, help='Dataset name')
-    config = parser.parse_args()
+
 
 
     import_pipeline_components()
@@ -45,7 +43,7 @@ if __name__ == "__main__":
     from cls_luigi.grammar import ApplicativeTreeGrammarEncoder
     from cls_luigi.grammar.hypergraph import get_hypergraph_dict_from_tree_grammar, build_hypergraph, \
         render_hypergraph_components
-    from cls_luigi.tools.constants import MAXIMIZE
+    from cls_luigi.tools.constants import MAXIMIZE, MINIMIZE
 
     from os.path import join as pjoin
     from os import makedirs, getcwd
@@ -54,67 +52,176 @@ if __name__ == "__main__":
     from validators.not_forbidden_validator import FORBIDDEN
 
     logging.basicConfig(level=logging.DEBUG)
-
+    
     CWD = getcwd()
     DATASETS_DIR = pjoin(str(Path(CWD).parent.absolute()), "datasets")
+    DEFAULT_OUTPUT_DIR = pjoin(CWD, "search_outputs")
+    
+    
+    parser = argparse.ArgumentParser(description='Run MCTS')
+    parser.add_argument("--outputs_dir",
+                        type=str,
+                        default=DEFAULT_OUTPUT_DIR,
+                        help="Directory for all pipeline enumeration outputs"
+                        )
+
+    parser.add_argument("--datasets_dir",
+                        type=str,
+                        default=DATASETS_DIR,
+                        help="Directory for all datasets"
+                        )
+
+    parser.add_argument("--seed",
+                        type=int,
+                        default=123,
+                        help="Seed for reproducibility")
+
+    parser.add_argument("--metric",
+                        type=str,
+                        default="accuracy",
+                        help="Metric for sorting the results")
+
+    parser.add_argument('--ds_name',
+                        type=str,
+                        help='Dataset name')
+    
+    
+    parser.add_argument("--workers",
+                    type=int,
+                    default=1,
+                    help="Number of luigi workers")
+    
+    parser.add_argument("--n_jobs",
+                        type=int,
+                        default=1,
+                        help="Number of jobs for pipeline compoenents"
+                        )
+    
+    parser.add_argument("--debbug_mode",
+                        action="store_true",
+                        help="wheather to run in debugging mode (with no luigi server)"                        
+    )
+    
+    parser.add_argument("--sense",
+                        type=str,
+                        choices=["MAX", "MIN"],
+                        default="MAX"        
+    )
+    
+    parser.add_argument("--time_factor",
+                        type=float,
+                        default=0.5,
+                        help="this parameter will be multiplied by the time it took CLS-LUIGI to enumerate pipelines"
+                        )
+    
+    parser.add_argument("--max_sec",
+                        type=int,
+                        default=0,
+                        help="Max seconds to run the MCTS, If this time is 0, the enumeration time will be used"
+                        )
+    
+    parser.add_argument("--mcts_explor",
+                        type=float,
+                        default=0.7,
+                        help="exploration param,eter for the MCTS")
+                        
+    
+    parser.add_argument("--pipeline_timeout",
+                        type=int,
+                        default=50,
+                        help="pipeline evaluation will be cut after this time"
+                        )
+    
+    parser.add_argument("--comp_timeout",
+                        type=int,
+                        default=0
+                        )
+    
+    parser.add_argument("-punishment",
+                        type=float,
+                        default=0.0,
+                        help="Punishment value for failed or timedout pipeline in the MCTS")
+    
+    parser.add_argument("prog_widening",
+                        action="store_true",
+                        help="wheather to use progressive widening or not")
+    
+    parser.add_argument("--pw_threshhold",
+                        type=int,
+                        default=2,
+                        )    
+    
+    parser.add_argument("--pw_coeff",
+                        type=float,
+                        default=0.5,
+                        )    
+    
+    
+    parser.add_argument("--pw_max_child",
+                        type=int,
+                        default=6,
+                        )    
+
+    
+    
+                        
+    config = parser.parse_args()
+    
+
+
 
     # Configs
-    DEBBUG_MDOE = False
-    SEED = 123
-    N_JOBS = 1
-    PIPELINE_METRIC = "accuracy"
-    SENSE = MAXIMIZE
-    MCTS_PARAMS = {
-        # "max_seconds": None,
-        "exploration_param": 1,
-    }
-    TIMING_FACTOR = .5
-    COMPONENT_TIMEOUT = None
-    PIPELINE_TIMEOUT = 3
-    PUNISHMENT_VALUE = 0.0
+    # DEBBUG_MDOE = False
+    # SEED = 123
+    # N_JOBS = 1
+    # PIPELINE_METRIC = "accuracy"
+    # SENSE = MAXIMIZE
+
+    # TIMING_FACTOR = .5
+    # COMPONENT_TIMEOUT = None
+    # PIPELINE_TIMEOUT = 3
+    # PUNISHMENT_VALUE = 0.0
 
     forbidden_action_filter = ForbiddenActionFilter(FORBIDDEN)
 
-    # for DS_NAME in os.listdir(DATASETS_DIR):
-    #     if DS_NAME in [
-    #         # "qsar-biodeg", "steel-plates-fault", "ozone-level-8hr",
-    #         #            "spambase", "phoneme", "bank-marketing", "eeg-eye-state",
-    #         #            "mozilla4",
-    #         #            "kc1",
-    #         "kc1"]:
 
-    DS_DIR = pjoin(DATASETS_DIR, config.ds_name)
+    DS_DIR = pjoin(config.datasets_dir, config.ds_name)
 
     paths = {}
     paths["train_phase"] = {
-        "x_train_path": pjoin(DS_DIR, f"seed-{SEED}", "train_phase", "x_train.csv"),
-        "y_train_path": pjoin(DS_DIR, f"seed-{SEED}", "train_phase", "y_train.csv"),
-        "x_valid_path": pjoin(DS_DIR, f"seed-{SEED}", "train_phase", "x_valid.csv"),
-        "y_valid_path": pjoin(DS_DIR, f"seed-{SEED}", "train_phase", "y_valid.csv"),
+        "x_train_path": pjoin(DS_DIR, f"seed-{config.seed}", "train_phase", "x_train.csv"),
+        "y_train_path": pjoin(DS_DIR, f"seed-{config.seed}", "train_phase", "y_train.csv"),
+        "x_valid_path": pjoin(DS_DIR, f"seed-{config.seed}", "train_phase", "x_valid.csv"),
+        "y_valid_path": pjoin(DS_DIR, f"seed-{config.seed}", "train_phase", "y_valid.csv"),
     }
 
     paths["test_phase"] = {
-        "x_train_path": pjoin(DS_DIR, f"seed-{SEED}", "test_phase", "x_train.csv"),
-        "y_train_path": pjoin(DS_DIR, f"seed-{SEED}", "test_phase", "y_train.csv"),
-        "x_test_path": pjoin(DS_DIR, f"seed-{SEED}", "test_phase", "x_test.csv"),
-        "y_test_path": pjoin(DS_DIR, f"seed-{SEED}", "test_phase", "y_test.csv"),
+        "x_train_path": pjoin(DS_DIR, f"seed-{config.seed}", "test_phase", "x_train.csv"),
+        "y_train_path": pjoin(DS_DIR, f"seed-{config.seed}", "test_phase", "y_train.csv"),
+        "x_test_path": pjoin(DS_DIR, f"seed-{config.seed}", "test_phase", "x_test.csv"),
+        "y_test_path": pjoin(DS_DIR, f"seed-{config.seed}", "test_phase", "y_test.csv"),
     }
 
-    MCTS_PARAMS["max_seconds"] = get_luigi_enumeration_time(CWD, config.ds_name, SEED) * TIMING_FACTOR
 
+    MCTS_PARAMS = {
+        "max_seconds": config.max_sec if config.max_sec > 0 else int(
+            get_luigi_enumeration_time(
+                CWD, config.ds_name, config.seed
+                ) * config.time_factor),
+        "exploration_param": config.mcts_explor
+    }
+    
     # Dirs
-    OUTPUTS_DIR = pjoin(CWD, "search_outputs", config.ds_name)
-    RUN_DIR = pjoin(OUTPUTS_DIR, f"seed-{SEED}")
+    OUTPUTS_DIR = pjoin(config.outputs_dir, config.ds_name)
+    RUN_DIR = pjoin(OUTPUTS_DIR, f"seed-{config.seed}")
     CLS_LUIGI_OUTPUTS_DIR = pjoin(RUN_DIR, "cls_luigi_automl")
     CLS_LUIGI_PIPELINES_DIR = pjoin(CLS_LUIGI_OUTPUTS_DIR, "pipelines")
     LUIGI_OUTPUTS_DIR = pjoin(RUN_DIR, "luigi")
     LUIGI_PIPELINES_OUTPUTS_DIR = pjoin(LUIGI_OUTPUTS_DIR, "pipelines_outputs")
     LUIGI_INC_OUTPUT_DIR = pjoin(LUIGI_OUTPUTS_DIR, "incumbent_outputs")
 
-    set_seed(SEED)
+    set_seed(config.seed)
     makedirs(OUTPUTS_DIR, exist_ok=True)
-    makedirs(RUN_DIR, exist_ok=False)
-    makedirs(CLS_LUIGI_OUTPUTS_DIR, exist_ok=False)
     makedirs(CLS_LUIGI_PIPELINES_DIR, exist_ok=False)
     makedirs(LUIGI_OUTPUTS_DIR, exist_ok=False)
     makedirs(LUIGI_PIPELINES_OUTPUTS_DIR, exist_ok=False)
@@ -167,17 +274,17 @@ if __name__ == "__main__":
         "y_test_path": paths["train_phase"]["y_valid_path"],
         "luigi_outputs_dir": LUIGI_OUTPUTS_DIR,
         "pipelines_outputs_dir": LUIGI_PIPELINES_OUTPUTS_DIR,
-        "seed": SEED,
-        "n_jobs": N_JOBS
+        "seed": config.seed,
+        "n_jobs": config.n_jobs
     }
     GlobalPipelineParameters().set_parameters(_luigi_pipeline_params)
     dump_json(pjoin(LUIGI_OUTPUTS_DIR, "luigi_pipeline_params.json"), _luigi_pipeline_params)
 
-    # prog_widening_params = {
-    #     "threshold": 2,
-    #     "progressiv_widening_coeff": 0.5,
-    #     "max_children": 6
-    # }
+    prog_widening_params = {
+         "threshold": config.pw_threshhold,
+         "progressiv_widening_coeff": config.pw_coeff,
+         "max_children": config.pw_max_child
+    }
 
     pipeline_objects = [pipeline() for pipeline in pipelines_classes]
     opt = mcts_manager.MCTSManager(
@@ -185,14 +292,14 @@ if __name__ == "__main__":
         pipeline_objects=pipeline_objects,
         mcts_params=MCTS_PARAMS,
         hypergraph=hypergraph,
-        game_sense=SENSE,
-        pipeline_metric=PIPELINE_METRIC,
-        evaluator_punishment_value=PUNISHMENT_VALUE,
-        pipeline_timeout=PIPELINE_TIMEOUT,
-        component_timeout=COMPONENT_TIMEOUT,
-        # prog_widening_params=prog_widening_params,
+        game_sense=MAXIMIZE if config.sense == "MAX" else MINIMIZE,
+        pipeline_metric=config.metric,
+        evaluator_punishment_value=config.punishment,
+        pipeline_timeout=config.pipeline_timeout,
+        component_timeout=config.comp_timeout if config.comp_timeout else None,
+        prog_widening_params=prog_widening_params if config.prog_widening else None,
         pipeline_filters=[forbidden_action_filter],
-        debugging_mode=DEBBUG_MDOE
+        debugging_mode=config.debbug_mode
     )
 
     inc = opt.run_mcts()
@@ -207,15 +314,15 @@ if __name__ == "__main__":
         "y_test_path": paths["test_phase"]["y_test_path"],
         "luigi_outputs_dir": LUIGI_OUTPUTS_DIR,
         "pipelines_outputs_dir": LUIGI_INC_OUTPUT_DIR,
-        "seed": SEED,
-        "n_jobs": N_JOBS
+        "seed": config.seed,
+        "n_jobs": config.n_jobs
     }
     GlobalPipelineParameters().set_parameters(_luigi_pipeline_params)
-    luigi.build([incumbent_luigi_pipeline], local_scheduler=DEBBUG_MDOE, detailed_summary=True)
+    luigi.build([incumbent_luigi_pipeline], local_scheduler=config.debbug_mode, detailed_summary=True)
     inc_score = {
         "luigi_task_id": inc["luigi_task_id"],
         "validation_score": inc["validation_score"],
-        "test_score": incumbent_luigi_pipeline.get_score(PIPELINE_METRIC)["test"]
+        "test_score": incumbent_luigi_pipeline.get_score(config.metric)["test"]
     }
     dump_json(pjoin(RUN_DIR, "incumbent_score.json"), inc_score)
     opt.shut_down()
