@@ -94,12 +94,12 @@ if __name__ == "__main__":
     parser.add_argument("--n_jobs",
                         type=int,
                         default=1,
-                        help="Number of jobs for pipeline compoenents"
+                        help="Number of jobs for pipeline components"
                         )
     
     parser.add_argument("--debbug_mode",
                         action="store_true",
-                        help="wheather to run in debugging mode (with no luigi server)"                        
+                        help="whether to run in debugging mode (with no luigi server)"
     )
     
     parser.add_argument("--sense",
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     parser.add_argument("--mcts_explor",
                         type=float,
                         default=0.7,
-                        help="exploration param,eter for the MCTS")
+                        help="exploration parameter for the MCTS")
                         
     
     parser.add_argument("--pipeline_timeout",
@@ -137,16 +137,16 @@ if __name__ == "__main__":
                         default=0
                         )
     
-    parser.add_argument("-punishment",
+    parser.add_argument("--punishment",
                         type=float,
                         default=0.0,
-                        help="Punishment value for failed or timedout pipeline in the MCTS")
+                        help="Punishment value for failed or timeout pipeline in the MCTS")
     
-    parser.add_argument("prog_widening",
+    parser.add_argument("--prog_widening",
                         action="store_true",
-                        help="wheather to use progressive widening or not")
+                        help="whether to use progressive widening or not")
     
-    parser.add_argument("--pw_threshhold",
+    parser.add_argument("--pw_threshold",
                         type=int,
                         default=2,
                         )    
@@ -166,21 +166,6 @@ if __name__ == "__main__":
     
                         
     config = parser.parse_args()
-    
-
-
-
-    # Configs
-    # DEBBUG_MDOE = False
-    # SEED = 123
-    # N_JOBS = 1
-    # PIPELINE_METRIC = "accuracy"
-    # SENSE = MAXIMIZE
-
-    # TIMING_FACTOR = .5
-    # COMPONENT_TIMEOUT = None
-    # PIPELINE_TIMEOUT = 3
-    # PUNISHMENT_VALUE = 0.0
 
     forbidden_action_filter = ForbiddenActionFilter(FORBIDDEN)
 
@@ -281,7 +266,7 @@ if __name__ == "__main__":
     dump_json(pjoin(LUIGI_OUTPUTS_DIR, "luigi_pipeline_params.json"), _luigi_pipeline_params)
 
     prog_widening_params = {
-         "threshold": config.pw_threshhold,
+         "threshold": config.pw_threshold,
          "progressiv_widening_coeff": config.pw_coeff,
          "max_children": config.pw_max_child
     }
@@ -328,4 +313,4 @@ if __name__ == "__main__":
     opt.shut_down()
 
 
-# python run_mcts.py --ds_name kc1
+# python run_recursive_mcts.py --ds_name kc1
