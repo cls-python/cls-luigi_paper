@@ -173,21 +173,18 @@ if __name__ == "__main__":
                         default=[
                             9967,  # steel-plates-fault
                             9957,  # qsar-biodeg
-                            9952,  # phoneme
-                            9978,  # ozone-level-8hr
-                            145847,  # hill-valley
-                            146820,  # wilt
-                            3899,  # mozilla4
-                            9983,  # eeg-eye-state
+                            #9952,  # phoneme
+                            #9978,  # ozone-level-8hr
+                            #146820,  # wilt
+                            #3899,  # mozilla4
+                            #9983,  # eeg-eye-state
                             359962,  # kc1 classification
                             359958,  # pc4 classification
-                            361066,  # bank-marketing classification
-                            359972,  # sylvin classification
-                            167120,  # numerai28.6
-                            9976,  # Madelon
-                            146606,  # higgs
-                            168868,  # APSFailure
-                            168338,  # riccardo
+                            #361066,  # bank-marketing classification
+                            #359972,  # sylvin classification
+                            ##167120,  # numerai28.6
+                            #9976,  # Madelon
+                            #146606,  # higgs
                         ],
                         help="List of dataset IDs to be downloaded from OpenML")
 
@@ -201,8 +198,6 @@ if __name__ == "__main__":
     
     ids = parsed.datasets_ids
     ids.extend(parsed.additional_datasets)
-    
-
 
     for dataset_id in ids:
         try:
